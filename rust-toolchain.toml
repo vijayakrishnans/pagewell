@@ -1,0 +1,6 @@
+[toolchain]
+# The toolchain Pagewell is built and tested with (PdfCraft's floor is 1.95).
+channel = "1.100.0"
+components = ["rustfmt", "clippy"]
+targets = ["wasm32-unknown-unknown"]
+profile = "minimal"

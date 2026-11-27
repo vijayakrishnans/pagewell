@@ -1,0 +1,29 @@
+[package]
+name = "pagewell-web-bridge"
+description = "Pagewell's editor in the browser: PdfCraft's egui editor mounted in a host page, with open/save/automation for JavaScript"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+repository.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[lints]
+workspace = true
+
+[dependencies]
+pdfcraft-automation = { workspace = true }
+pdfcraft-engine = { workspace = true }
+pdfcraft-ui-egui = { workspace = true }
+serde_json = { workspace = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+eframe = { workspace = true, features = ["default_fonts", "glow", "persistence", "accesskit"] }
+egui = { workspace = true, features = ["default_fonts", "monochrome_emoji_fonts"] }
+wasm-bindgen = { workspace = true }
+wasm-bindgen-futures = { workspace = true }
+js-sys = { workspace = true }
+web-sys = { workspace = true, features = ["Window", "Document", "Element", "HtmlCanvasElement", "Event", "EventTarget", "CustomEvent", "CustomEventInit", "console"] }

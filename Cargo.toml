@@ -1,0 +1,81 @@
+# Pagewell's Rust workspace: product crates only (crates/pagewell-*). PdfCraft is vendored,
+# unmodified apart from vendor/UPSTREAM-PATCHES.md, at vendor/pdfcraft/ and used by path; it keeps
+# its own workspace, which is excluded here.
+#
+# Kept in step with vendor/pdfcraft/Cargo.toml on every PDFCRAFT_REF bump (one task):
+#   - [patch.crates-io] below is that file's, with vendored paths prefixed vendor/pdfcraft/;
+#   - [profile.*] mirrors it;
+#   - Cargo.lock started as a copy of vendor/pdfcraft/Cargo.lock, so the engine resolves to the
+#     versions upstream tested.
+[workspace]
+resolver = "3"
+members = ["crates/*"]
+exclude = ["vendor/pdfcraft"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "Apache-2.0"
+rust-version = "1.95"
+publish = false
+repository = "https://github.com/vijayakrishnans/pagewell"
+
+[workspace.dependencies]
+pdfcraft-automation = { path = "vendor/pdfcraft/crates/automation", default-features = false }
+pdfcraft-engine = { path = "vendor/pdfcraft/crates/engine" }
+pdfcraft-ui-egui = { path = "vendor/pdfcraft/crates/ui-egui" }
+eframe = { version = "0.37", default-features = false }
+egui = "0.37"
+serde_json = "1"
+# Must equal the wasm-bindgen CLI used to generate the JS module (CI installs the same version).
+wasm-bindgen = "=0.2.129"
+wasm-bindgen-futures = "0.4"
+js-sys = "0.3"
+web-sys = "0.3"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+unwrap_used = "deny"
+expect_used = "warn"
+panic = "deny"
+
+[profile.dev.package."*"]
+opt-level = 2
+debug = false
+
+[profile.dev]
+opt-level = 1
+debug = "line-tables-only"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+
+# Mirrors vendor/pdfcraft/Cargo.toml (see the note at the top).
+[patch.crates-io]
+hayro-interpret = { git = "https://github.com/storytold/craft-libs", rev = "9eb02be84f21898e247daeb2af5827c9fe85a3a0" }
+hayro = { git = "https://github.com/storytold/craft-libs", rev = "9eb02be84f21898e247daeb2af5827c9fe85a3a0" }
+hayro-syntax = { git = "https://github.com/storytold/craft-libs", rev = "9eb02be84f21898e247daeb2af5827c9fe85a3a0" }
+hayro-cmap = { git = "https://github.com/storytold/craft-libs", rev = "9eb02be84f21898e247daeb2af5827c9fe85a3a0" }
+hayro-postscript = { git = "https://github.com/storytold/craft-libs", rev = "e7873217287876f76a045550369c90a541693c33" }
+hayro-jbig2 = { git = "https://github.com/storytold/craft-libs", rev = "9eb02be84f21898e247daeb2af5827c9fe85a3a0" }
+lopdf = { path = "vendor/pdfcraft/vendor/lopdf" }
+vello_common = { path = "vendor/pdfcraft/vendor/vello_common" }
+vello_cpu = { path = "vendor/pdfcraft/vendor/vello_cpu" }
+ecolor = { git = "https://github.com/storytold/egui.git", rev = "725a39fca940f77149ffbb9c58eef405a16997bc" }
+emath = { git = "https://github.com/storytold/egui.git", rev = "725a39fca940f77149ffbb9c58eef405a16997bc" }
+epaint = { git = "https://github.com/storytold/egui.git", rev = "725a39fca940f77149ffbb9c58eef405a16997bc" }
+epaint_default_fonts = { git = "https://github.com/storytold/egui.git", rev = "725a39fca940f77149ffbb9c58eef405a16997bc" }
+egui = { git = "https://github.com/storytold/egui.git", rev = "725a39fca940f77149ffbb9c58eef405a16997bc" }
+egui-winit = { git = "https://github.com/storytold/egui.git", rev = "725a39fca940f77149ffbb9c58eef405a16997bc" }
+egui-wgpu = { git = "https://github.com/storytold/egui.git", rev = "725a39fca940f77149ffbb9c58eef405a16997bc" }
+egui_glow = { git = "https://github.com/storytold/egui.git", rev = "725a39fca940f77149ffbb9c58eef405a16997bc" }
+egui_extras = { git = "https://github.com/storytold/egui.git", rev = "725a39fca940f77149ffbb9c58eef405a16997bc" }
+egui_kittest = { git = "https://github.com/storytold/egui.git", rev = "725a39fca940f77149ffbb9c58eef405a16997bc" }
+egui_system_font_provider = { git = "https://github.com/storytold/egui.git", rev = "725a39fca940f77149ffbb9c58eef405a16997bc" }
+eframe = { git = "https://github.com/storytold/egui.git", rev = "725a39fca940f77149ffbb9c58eef405a16997bc" }
+egui_demo_lib = { git = "https://github.com/storytold/egui.git", rev = "725a39fca940f77149ffbb9c58eef405a16997bc" }
+egui_inspection = { git = "https://github.com/storytold/egui.git", rev = "725a39fca940f77149ffbb9c58eef405a16997bc" }
+winit = { git = "https://github.com/storytold/winit.git", rev = "a517b3846ee8457d84ee4975110bfda6797c44dc" }

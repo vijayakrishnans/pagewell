@@ -1,0 +1,92 @@
+# Pagewell's Rust lane: the product crates (crates/pagewell-*) against the vendored PdfCraft.
+# Separate from ci.yml (orun's plan and convergence), which owns deployment.
+name: rust
+
+on:
+  pull_request:
+    paths:
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "rust-toolchain.toml"
+      - "rustfmt.toml"
+      - ".cargo/**"
+      - "crates/**"
+      - "vendor/pdfcraft/**"
+      - ".github/workflows/rust.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "rust-toolchain.toml"
+      - ".cargo/**"
+      - "crates/**"
+      - "vendor/pdfcraft/**"
+      - ".github/workflows/rust.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rust-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: "0"
+  # Must equal the wasm-bindgen crate pinned in Cargo.toml.
+  WASM_BINDGEN_VERSION: "0.2.129"
+
+jobs:
+  check:
+    name: fmt · clippy · test
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain (rust-toolchain.toml)
+        run: rustup show active-toolchain || rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: pagewell-native
+      - name: fmt
+        run: cargo fmt --all --check
+      - name: clippy
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - name: test
+        run: cargo test --workspace --locked
+
+  wasm:
+    name: wasm build
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain (rust-toolchain.toml)
+        run: rustup show active-toolchain || rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: pagewell-wasm
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-bindgen@${{ env.WASM_BINDGEN_VERSION }}
+      - name: Build the bridge for wasm32
+        run: cargo build --release --locked --target wasm32-unknown-unknown -p pagewell-web-bridge
+      - name: Generate the JS module
+        run: wasm-bindgen --target web --out-dir dist/editor target/wasm32-unknown-unknown/release/pagewell_web_bridge.wasm
+      - name: Sizes
+        run: |
+          cd dist/editor
+          {
+            echo "### Editor bundle"
+            echo "| file | raw | gzip -9 | brotli |"
+            echo "|---|---:|---:|---:|"
+            for f in *; do
+              echo "| $f | $(stat -c%s "$f") | $(gzip -9c "$f" | wc -c) | $(brotli -c -q 11 "$f" 2>/dev/null | wc -c) |"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pagewell-editor-wasm
+          path: dist/editor
+          retention-days: 7
