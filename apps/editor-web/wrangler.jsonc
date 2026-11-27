@@ -1,0 +1,15 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Per-environment name (pagewell-editor-web-<env>) comes from component.yaml.
+  "name": "pagewell-editor-web",
+  "main": "src/worker.ts",
+  "compatibility_date": "2025-05-01",
+  "assets": {
+    "directory": "dist",
+    "binding": "ASSETS",
+    // The worker answers /edit/* and serves the wasm pre-compressed; everything else
+    // falls through to the assets.
+    "run_worker_first": true,
+    "not_found_handling": "none"
+  }
+}

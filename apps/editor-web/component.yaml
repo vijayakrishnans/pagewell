@@ -1,0 +1,58 @@
+apiVersion: sourceplane.io/v1
+kind: Component
+metadata:
+  name: editor-web
+  description: Pagewell's PDF editor on the web (Workers + Static Assets), serving the prebuilt editor bundle the Rust lane publishes
+spec:
+  type: cloudflare-workers-assets-turbo
+  lifecycle: experimental
+  owner: platform
+  docs:
+    overview: docs/overview.md
+    pages:
+      - { path: docs/runbook.md, role: runbook, title: Runbook }
+  domain: pagewell-editor
+  path: apps/editor-web
+  # PW1 ships the editor to stage only; prod joins in PW11 (prod, docs, launch).
+  subscribe:
+    environments:
+      - name: dev
+        profile: verify
+      - name: stage
+        profile: verify
+        profileRules:
+          - profile: deploy
+            when:
+              triggerRef: github-push-main
+  parameters:
+    nodeVersion: "22"
+    pnpmVersion: "10.12.1"
+
+    workspaceDir: ../..
+    appDir: .
+
+    turboFilter: "@pagewell/editor-web"
+    wranglerConfig: wrangler.jsonc
+
+    # wrangler bundles the worker from source; the assets are dist/ (the page, the editor
+    # bundle under pkg/<sourceHash>/ and the generated fixture).
+    workerEntrypoint: src/worker.ts
+    assetsDir: dist
+
+    workerName: pagewell-editor-web
+    environmentAwareWorkerName: true
+    workersDevSubdomain: vijayakrishnan12994
+
+    installCommand: pnpm install --frozen-lockfile
+    # Fetches the pinned editor bundle (editor-artifact.pin.json) and verifies its sha256: a
+    # deploy never compiles Rust.
+    buildCommand: node scripts/editor-artifact.mjs build
+
+    # The page, the health route, and the wasm served pre-compressed. Each body is buffered
+    # before grep (no SIGPIPE under pipefail).
+    smokeCommand: "page=$(curl -sfL \"${DEPLOYED_URL}/edit/local\") && echo \"${page}\" | grep -q '<title>Pagewell editor</title>' && health=$(curl -sf \"${DEPLOYED_URL}/health\") && echo \"${health}\" | grep -q '\"ok\":true' && pkg=$(echo \"${page}\" | grep -o 'data-pkg=\"[0-9a-f]*\"' | cut -d'\"' -f2) && hdrs=$(curl -sfI -H 'Accept-Encoding: br' \"${DEPLOYED_URL}/pkg/${pkg}/pagewell_web_bridge_bg.wasm\") && echo \"${hdrs}\" | grep -qi '^content-type: application/wasm'"
+  labels:
+    team: platform
+    layer: delivery
+    surface: editor-web
+    runtime: cloudflare

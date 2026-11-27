@@ -1,0 +1,20 @@
+:root {
+  --bg: #f6f6f4; --fg: #1d1d1b; --muted: #6b6b66; --line: #dcdcd6; --accent: #2f5bd3; --button: #ffffff;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #18181a; --fg: #ececea; --muted: #a2a29c; --line: #34343a; --accent: #7fa0ff; --button: #232327; }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+body { display: flex; flex-direction: column; }
+.bar { display: flex; align-items: center; gap: 12px; padding: 8px 16px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.brand { display: inline-flex; align-items: center; gap: 8px; color: var(--fg); text-decoration: none; font-weight: 600; }
+.actions { display: flex; gap: 8px; }
+.button { border: 1px solid var(--line); background: var(--button); color: var(--fg); padding: 5px 12px; border-radius: 6px; font: inherit; cursor: pointer; }
+.button:disabled { opacity: .5; cursor: default; }
+.button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+#status { margin-left: auto; color: var(--muted); }
+#status.error { color: #c2362b; }
+.stage { flex: 1; min-height: 0; position: relative; }
+#editor { position: absolute; inset: 0; width: 100%; height: 100%; display: block; outline: none; }

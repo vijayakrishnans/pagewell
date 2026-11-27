@@ -1,0 +1,17 @@
+{
+  "name": "@pagewell/editor-web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/editor-artifact.mjs build",
+    "dev": "node scripts/editor-artifact.mjs build && wrangler dev",
+    "test": "node --test scripts/*.test.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250513.0",
+    "typescript": "^5.8.3",
+    "wrangler": "^4.14.4"
+  }
+}

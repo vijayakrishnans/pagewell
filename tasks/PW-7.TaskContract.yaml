@@ -1,0 +1,22 @@
+# Task PW-7 (milestone PW1), minted in Orunbase with this contract inline.
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: PW-7
+spec:
+  goal: apps/editor-web, a Workers + Static Assets app, serves the Pagewell editor at /edit/local (open a local file, edit, save to disk) and /edit/:docId (a generated, seeded fixture), from a prebuilt editor bundle that the Rust CI lane publishes and the app pins by sha256, so a deploy never compiles Rust; it is deployed to stage through orun.
+  affects:
+    - apps/editor-web/**
+    - .github/workflows/rust.yml
+    - pnpm-lock.yaml
+    - specs/epics/pagewell-pdf-workspace/**
+    - ai/context/**
+    - tasks/**
+  doneWhen:
+    - the Rust CI lane publishes the stripped, brotli-compressed editor bundle as a release asset named by the hash of the Rust sources, with its sha256
+    - apps/editor-web pins that asset (url, sha256, sourceHash) and its build fetches and verifies it; no Rust toolchain in the deploy
+    - the worker serves the wasm pre-compressed (Content-Encoding br), under the 25 MiB per-file assets limit
+    - /edit/local and /edit/fixture answer 200 on stage, with no ArtCraft or PdfCraft marks in the shell
+    - the fixture is generated, not a real document
+    - task_get PW-7 reads done
+  gates: []

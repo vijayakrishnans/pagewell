@@ -13,6 +13,7 @@ on:
       - "crates/**"
       - "vendor/pdfcraft/**"
       - ".github/workflows/rust.yml"
+      - "apps/editor-web/scripts/editor-artifact.mjs"
   push:
     branches: [main]
     paths:
@@ -23,6 +24,10 @@ on:
       - "crates/**"
       - "vendor/pdfcraft/**"
       - ".github/workflows/rust.yml"
+      - "apps/editor-web/scripts/editor-artifact.mjs"
+  # Publish the editor bundle from a branch (its hash names the Rust sources, so a bundle
+  # built anywhere is the same bundle).
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -60,6 +65,9 @@ jobs:
     name: wasm build
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    permissions:
+      # Publishes the editor bundle to the `editor-artifacts` release (main and dispatch only).
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - name: Toolchain (rust-toolchain.toml)
@@ -73,7 +81,7 @@ jobs:
       - name: Build the bridge for wasm32
         run: cargo build --release --locked --target wasm32-unknown-unknown -p pagewell-web-bridge
       - name: Generate the JS module
-        run: wasm-bindgen --target web --out-dir dist/editor target/wasm32-unknown-unknown/release/pagewell_web_bridge.wasm
+        run: wasm-bindgen --target web --remove-name-section --remove-producers-section --out-dir dist/editor target/wasm32-unknown-unknown/release/pagewell_web_bridge.wasm
       - name: Sizes
         run: |
           cd dist/editor
@@ -90,3 +98,27 @@ jobs:
           name: pagewell-editor-wasm
           path: dist/editor
           retention-days: 7
+      - name: Pack the editor bundle
+        id: pack
+        run: |
+          node apps/editor-web/scripts/editor-artifact.mjs pack --in dist/editor --out dist/packed | tee pack.log
+          echo "json=$(tail -1 pack.log)" >> "$GITHUB_OUTPUT"
+          { echo; echo '### Packed bundle'; echo; echo '```'; cat pack.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      # Content-addressed on one rolling release: an asset is only ever the build of the sources
+      # its name hashes, so publishing is skip-if-present. apps/editor-web pins the asset.
+      - name: Publish the editor bundle
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ASSET: ${{ fromJSON(steps.pack.outputs.json).asset }}
+        run: |
+          gh release view editor-artifacts >/dev/null 2>&1 || \
+            gh release create editor-artifacts --prerelease --title "Editor bundles" \
+              --notes "Prebuilt Pagewell editor bundles (crates/pagewell-web-bridge), named by the hash of the Rust sources. apps/editor-web pins one by sha256."
+          if gh release view editor-artifacts --json assets -q '.assets[].name' | grep -qx "$ASSET"; then
+            echo "$ASSET is already published"
+          else
+            gh release upload editor-artifacts "dist/packed/$ASSET" "dist/packed/$ASSET.sha256"
+          fi
+          url="https://github.com/${GITHUB_REPOSITORY}/releases/download/editor-artifacts/$ASSET"
+          { echo; echo "Published: $url"; } >> "$GITHUB_STEP_SUMMARY"
