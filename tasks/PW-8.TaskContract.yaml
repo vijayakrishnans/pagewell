@@ -6,6 +6,7 @@ metadata:
 spec:
   goal: Close PW1 — Playwright drives the editor through the bridge API in Chromium, Firefox and WebKit (open, edit, save, undo, plus a screenshot smoke), the size and first-page budgets are measured on stage after trying wasm-opt and a size-optimised build, a CI check fails on any ArtCraft or PdfCraft mark on a user-visible surface, and PW1 is marked done.
   affects:
+    - default/pagewell/editor-web
     - tests/editor-e2e/**
     - tooling/brand-check/**
     - .github/workflows/editor-e2e.yml
@@ -26,3 +27,5 @@ spec:
     - PW1 is marked done in implementation-plan.md and IMPLEMENTATION-STATUS.md, and the feature matrix and ledger are updated
     - task_get PW-8 reads done
   gates: []
+  deps:
+    - PW-7

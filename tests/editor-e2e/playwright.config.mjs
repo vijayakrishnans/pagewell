@@ -21,7 +21,9 @@ export default defineConfig({
   },
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"], launchOptions: { executablePath: process.env.CHROMIUM_PATH || undefined, args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"] } } },
-    { name: "firefox", use: { ...devices["Desktop Firefox"] } },
+    // CI runners have no GPU, and Firefox's blocklist refuses its software GL there; the editor
+    // draws with WebGL2, so force it on for the tests.
+    { name: "firefox", use: { ...devices["Desktop Firefox"], launchOptions: { firefoxUserPrefs: { "webgl.force-enabled": true, "webgl.disabled": false } } } },
     { name: "webkit", use: { ...devices["Desktop Safari"] } },
   ],
   webServer: external

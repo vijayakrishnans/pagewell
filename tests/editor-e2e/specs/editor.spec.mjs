@@ -80,3 +80,15 @@ test("the seeded fixture opens with all its pages", async ({ page }, info) => {
   info.annotations.push({ type: "first-load-bytes", description: String(transfer) });
   await page.screenshot({ path: info.outputPath(`fixture-${info.project.name}.png`) });
 });
+
+test("without WebGL2 the page says why instead of loading forever", async ({ page }) => {
+  await page.addInitScript(() => {
+    const getContext = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function (kind, ...rest) {
+      return kind === "webgl2" ? null : getContext.call(this, kind, ...rest);
+    };
+  });
+  await page.goto("/edit/local");
+  await expect(page.locator("#status")).toContainText("WebGL2");
+  await expect(page.locator("#status")).toHaveClass(/error/);
+});
