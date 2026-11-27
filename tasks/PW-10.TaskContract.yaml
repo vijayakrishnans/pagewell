@@ -1,0 +1,43 @@
+# Task PW-10 (milestone PW2), minted in Orunbase; contract attached with orun task attach.
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: PW-10
+spec:
+  goal: apps/files-worker serves the drive API over D1 and R2 — folders, documents (single-request and multipart upload), versions with baseVersion conflicts and restore, streamed content, a 30-day trash with a purge cron, and storage, file-size and version quotas; authorization goes through new files actions in policy-worker, and a resource in another org is always 404.
+  affects:
+    - default/pagewell/files-worker
+    - default/pagewell/files-worker-tests
+    - default/pagewell/billing-worker
+    - default/pagewell/contracts
+    - default/pagewell/contracts-tests
+    - default/pagewell/db
+    - default/pagewell/db-migrate
+    - default/pagewell/db-tests
+    - default/pagewell/editor-web
+    - default/pagewell/policy-engine
+    - default/pagewell/policy-engine-tests
+    - default/pagewell/shared
+    - apps/files-worker/**
+    - tests/files-worker/**
+    - packages/policy-engine/**
+    - tests/policy-engine/**
+    - tests/policy-worker/**
+    - apps/billing-worker/**
+    - tests/billing-worker/**
+    - packages/contracts/**
+    - packages/db/**
+    - packages/shared/**
+    - pnpm-lock.yaml
+    - specs/epics/pagewell-pdf-workspace/**
+    - ai/context/**
+    - tasks/**
+  deps: [PW-9]
+  doneWhen:
+    - "routes tested end to end on real SQLite and an in-memory R2: upload, list, content, save v2 on base 1, stale save 409 version_conflict, restore v1 as v3"
+    - multipart upload, trash and restore, and the purge cron are tested
+    - "cross-org isolation: every route given another org's folder, document, version or upload answers 404 and changes no row or R2 object"
+    - storage, file-size and version quotas are enforced (402 quota_exceeded) from billing entitlements, with free-tier defaults
+    - a non-PDF body is refused; no document text is logged
+    - the files-worker component verifies in CI (typecheck, dry-run deploy)
+  gates: []

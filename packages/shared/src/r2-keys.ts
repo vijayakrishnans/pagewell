@@ -4,18 +4,17 @@
 // building one anywhere else). Ids are checked, so nothing a caller passes can
 // climb out of its org's prefix.
 //
-//   org/<orgId>/doc/<docId>/blob/<sha256>.pdf          a version's bytes (content-addressed)
+//   org/<orgId>/doc/<docId>/blob/<blobId>.pdf          a version's bytes (one fresh id per write)
 //   org/<orgId>/doc/<docId>/thumb/<version>/<page>.webp
 //   org/<orgId>/doc/<docId>/text/<version>.json
 //   org/<orgId>/tmp/<uploadId>                          an in-flight multipart upload
 //
-// Version bytes are addressed by their sha256, not by version number: two
+// Version bytes get a fresh id per write, not their version number: two
 // writers racing on the same baseVersion then never overwrite each other's
-// object, and a restore points the new version at the old object.
+// object, and a restore points the new version at the old object. (Not the
+// sha256 either: the key is needed before the bytes have streamed through.)
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
-const SHA256 = /^[0-9a-f]{64}$/;
-
 export class R2KeyError extends Error {
   constructor(what: string) {
     super(`r2 key: invalid ${what}`);
@@ -39,9 +38,8 @@ export function orgPrefix(orgId: string): string {
 }
 
 export const r2Key = {
-  blob(orgId: string, docId: string, sha256: string): string {
-    if (typeof sha256 !== "string" || !SHA256.test(sha256)) throw new R2KeyError("sha256");
-    return `${orgPrefix(orgId)}doc/${uuid(docId, "document id")}/blob/${sha256}.pdf`;
+  blob(orgId: string, docId: string, blobId: string): string {
+    return `${orgPrefix(orgId)}doc/${uuid(docId, "document id")}/blob/${uuid(blobId, "blob id")}.pdf`;
   },
   thumb(orgId: string, docId: string, version: number, page: number): string {
     return `${orgPrefix(orgId)}doc/${uuid(docId, "document id")}/thumb/${positive(version, "version")}/${positive(page, "page")}.webp`;

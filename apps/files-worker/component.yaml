@@ -1,0 +1,76 @@
+apiVersion: sourceplane.io/v1
+kind: Component
+metadata:
+  name: files-worker
+  description: Pagewell's drive — folders, documents, versions, uploads, trash and quotas over D1 and R2
+spec:
+  type: cloudflare-worker-turbo
+  lifecycle: production
+  owner: pagewell
+  docs:
+    overview: docs/overview.md
+    pages:
+      - { path: docs/runbook.md, role: runbook, title: Runbook }
+  domain: pagewell-drive
+  path: apps/files-worker
+  dependsOn:
+    - component: membership-worker
+    - component: policy-worker
+      mode: enforced
+      modeRules:
+        - mode: advisory
+          when:
+            triggerRef: github-pull-request
+    - component: billing-worker
+    - component: cloudflare-d1
+      mode: enforced
+      modeRules:
+        - mode: advisory
+          when:
+            triggerRef: github-pull-request
+  secretEnv:
+    WIRING_CLOUDFLARE_D1_STAGE: "secret://ws_52SNF622/pagewell/stage/WIRING_CLOUDFLARE_D1"
+    WIRING_CLOUDFLARE_D1_PROD: "secret://ws_52SNF622/pagewell/prod/WIRING_CLOUDFLARE_D1"
+
+  # Verify only, for now: the R2 bucket pagewell-files-<env> this worker binds
+  # is created by the cloudflare-r2 Terraform root, which waits on the R2 token
+  # (WAITING W3). The task that lands that root switches stage and prod to
+  # deploy on github-push-main, like the other workers.
+  subscribe:
+    environments:
+      - name: dev
+        profile: verify
+      - name: stage
+        dependencyMode: advisory
+        profile: verify
+      - name: prod
+        dependencyMode: advisory
+        profile: verify
+  parameters:
+    nodeVersion: "22"
+    pnpmVersion: "10.12.1"
+    workspaceDir: ../..
+    appDir: .
+    orgName: sourceplane
+    owner: sourceplane
+    repo: pagewell
+
+    turboFilter: "@saas/files-worker"
+    wranglerConfig: wrangler.jsonc
+    wranglerTemplate: wrangler.template.jsonc
+    wiringComponents: "cloudflare-d1"
+    wiringEnvs: "stage,prod"
+    wiringFixture: wiring.fixture.json
+    installCommand: pnpm install --frozen-lockfile
+    buildCommand: pnpm exec turbo run build --filter=@saas/files-worker
+    typecheckCommand: pnpm exec turbo run typecheck --filter=@saas/files-worker
+    dryRunCommand: pnpm exec wrangler deploy --dry-run --config wrangler.jsonc --env prod
+    deployCommand: pnpm exec wrangler deploy --config wrangler.jsonc --env prod
+    preDeployCommand: "echo 'No pre-deploy step configured.'"
+    migrationCommand: "echo 'Migrations run in the db-migrate component.'"
+    smokeCommand: "echo 'No public route; exercised through api-edge.'"
+  labels:
+    team: pagewell
+    layer: runtime
+    surface: files
+    runtime: cloudflare

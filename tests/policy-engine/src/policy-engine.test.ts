@@ -686,7 +686,7 @@ describe("listEffectivePermissions", () => {
     expect(result.derivedScope.orgId).toBe("org_1");
 
     const allowed = result.permissions.filter((p) => p.allow);
-    expect(allowed.length).toBe(31);
+    expect(allowed.length).toBe(34);
   });
 
   it("returns limited permissions for viewer", () => {
@@ -698,6 +698,7 @@ describe("listEffectivePermissions", () => {
     const result = listEffectivePermissions(input);
     const allowed = result.permissions.filter((p) => p.allow);
     expect(allowed.map((p) => p.action).sort()).toEqual([
+      "files.read",
       "organization.config.read",
       "organization.integration.read",
       "organization.metering.read",
@@ -1014,5 +1015,38 @@ describe("project.repo_link.write (saas-integrations IG3)", () => {
         authReq("project.repo_link.write", ORG, [projectFact("project_builder", ORG, "p1")], "p1"),
       ).allow,
     ).toBe(false);
+  });
+});
+
+describe("files actions (Pagewell drive, PW-10)", () => {
+  const filesReq = (action: string, orgId: string, facts: MembershipFact[]): AuthorizationRequest => ({
+    subject,
+    action,
+    resource: { kind: "files", orgId },
+    context: { memberships: facts },
+  });
+
+  it.each([
+    ["owner", ["files.read", "files.write", "files.delete"]],
+    ["admin", ["files.read", "files.write", "files.delete"]],
+    ["builder", ["files.read", "files.write", "files.delete"]],
+    ["viewer", ["files.read"]],
+    ["billing_admin", []],
+  ] as const)("%s may %j in its own org", (role, allowed) => {
+    for (const action of ["files.read", "files.write", "files.delete"]) {
+      const result = authorize(filesReq(action, "org_1", [orgFact(role, "org_1")]));
+      expect({ action, allow: result.allow }).toEqual({ action, allow: (allowed as readonly string[]).includes(action) });
+    }
+  });
+
+  it("an owner of one org has no files rights in another", () => {
+    for (const action of ["files.read", "files.write", "files.delete"]) {
+      expect(authorize(filesReq(action, "org_2", [orgFact("owner", "org_1")])).allow).toBe(false);
+    }
+  });
+
+  it("a project role grants no files rights", () => {
+    const fact = { kind: "role_assignment", role: "project_admin", scope: { kind: "project", orgId: "org_1", projectId: "prj_1" } } as MembershipFact;
+    expect(authorize(filesReq("files.read", "org_1", [fact])).allow).toBe(false);
   });
 });
