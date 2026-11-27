@@ -53,6 +53,14 @@ debug = "line-tables-only"
 lto = "thin"
 codegen-units = 1
 
+# The editor's wasm (PW-8): optimised for size. Measured on the bridge, brotli-11: release
+# 13,019,492 B; opt-level z + fat LTO 10,272,580 B (wasm-opt -Oz on top made both larger
+# compressed, so it is not used). Native builds keep `release`.
+[profile.web]
+inherits = "release"
+opt-level = "z"
+lto = "fat"
+
 # Mirrors vendor/pdfcraft/Cargo.toml (see the note at the top).
 [patch.crates-io]
 hayro-interpret = { git = "https://github.com/storytold/craft-libs", rev = "9eb02be84f21898e247daeb2af5827c9fe85a3a0" }

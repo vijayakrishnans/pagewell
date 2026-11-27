@@ -84,9 +84,9 @@ jobs:
         with:
           tool: wasm-bindgen@${{ env.WASM_BINDGEN_VERSION }}
       - name: Build the bridge for wasm32
-        run: cargo build --release --locked --target wasm32-unknown-unknown -p pagewell-web-bridge
+        run: cargo build --profile web --locked --target wasm32-unknown-unknown -p pagewell-web-bridge
       - name: Generate the JS module
-        run: wasm-bindgen --target web --remove-name-section --remove-producers-section --out-dir dist/editor target/wasm32-unknown-unknown/release/pagewell_web_bridge.wasm
+        run: wasm-bindgen --target web --remove-name-section --remove-producers-section --out-dir dist/editor target/wasm32-unknown-unknown/web/pagewell_web_bridge.wasm
       - name: Sizes
         run: |
           cd dist/editor
