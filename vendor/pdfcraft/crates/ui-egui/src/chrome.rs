@@ -326,8 +326,12 @@ pub fn tab_strip(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
                     if icons::button(ui, "circle-help", button, false, tl!("Keyboard shortcuts")).clicked() {
                         app.dialog = Some(Dialog::Shortcuts);
                     }
-                    // One click to the community, from anywhere in the app.
-                    if widgets::ghost_button_sized(ui, "messages-square", "Discord", tab_h).on_hover_text(pdfcraft_engine::links::DISCORD).clicked() {
+                    // One click to the community, from anywhere in the app (not under a host brand).
+                    if crate::brand::community()
+                        && widgets::ghost_button_sized(ui, "messages-square", "Discord", tab_h)
+                            .on_hover_text(pdfcraft_engine::links::DISCORD)
+                            .clicked()
+                    {
                         app.execute("help.discord");
                     }
                 });
