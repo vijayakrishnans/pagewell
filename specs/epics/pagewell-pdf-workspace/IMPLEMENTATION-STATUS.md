@@ -7,7 +7,7 @@ the code departed from `design.md`.
 |---|---|---|
 | PW0 — the spec | ✅ done 2026-11-27 (PW-1 doc set; PW-2 public, listing-ready repo) | #3, #4 |
 | PW1 — editor on the web | ✅ done 2026-11-28: vendor subtree (PW-3), upstream hooks P1/P2 (PW-5, PW-6), Rust workspace + bridge (PW-4), editor-web on stage (PW-7), three browsers, budgets, brand check (PW-8). Both budgets missed and recorded (risk PW-C) | #5, #6, #7, #8, #9, #10 |
-| PW2 — drive | in progress: data layer (PW-9), files worker verified but not deployed until the R2 bucket exists (PW-10) | #11 |
+| PW2 — drive | in progress: data layer (PW-9), files worker verified but not deployed until the R2 bucket exists (PW-10), api-edge facade (PW-12) | #11, #12 |
 | PW3 — orgs and sharing | | |
 | PW4 — heavy jobs | | |
 | PW5 — review | | |
@@ -92,4 +92,9 @@ whose browser has no WebGL2 now get a message saying so instead of a page stuck 
   against the sha256 the client sends.
 - **Stage deploy waits on the bucket.** `files-worker` verifies in CI but is subscribed
   `verify`-only until the `cloudflare-r2` root creates `pagewell-files-<env>` (WAITING W3).
-
+- **The edge (PW-12).** `api-edge` forwards the drive routes to `FILES_WORKER` with the actor
+  headers, streaming bodies both ways; the drive has its own rate-limit family (300 per
+  identity, 1,500 per org per minute: a multipart upload is a request per part). CORS admits
+  the editor's workers.dev origin of the same environment, so the editor can open and save
+  documents directly. Until files-worker deploys, the binding points at the fleet's
+  placeholder Worker and the drive routes answer 503.

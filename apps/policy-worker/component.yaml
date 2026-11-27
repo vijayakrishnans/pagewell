@@ -66,4 +66,4 @@ spec:
     surface: policy
     runtime: cloudflare
 # ci: trigger full-component verification (orun v2.12.0 upgrade — PR #183)
-# orun: redeploy PW-10 files.* actions 20261128T000000Z
+# orun: redeploy PW-12 stub for FILES_WORKER 20261128T010000Z

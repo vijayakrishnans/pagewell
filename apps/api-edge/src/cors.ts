@@ -1,5 +1,5 @@
 import type { Env } from "./env";
-import { consoleWorkersDevOrigin } from "./app-config";
+import { consoleWorkersDevOrigin, editorWorkersDevOrigin } from "./app-config";
 
 // Deploy hostnames for `apps/web-console-next` (Next.js + opennextjs/cloudflare)
 // under the cloudflare-workers-assets-turbo composition. Per-env naming via
@@ -25,11 +25,25 @@ const ALLOWED_HEADERS = [
   "x-request-id",
   "traceparent",
   "idempotency-key",
+  // Pagewell's drive: a save names its base version; the browser sends the page count.
+  "x-pagewell-base-version",
+  "x-pagewell-page-count",
+  "if-none-match",
 ].join(", ");
 
 const EXPOSED_HEADERS = [
   "x-request-id",
+  // Pagewell's drive: the version a content response carries, and its ETag (sha256).
+  "x-pagewell-version",
+  "etag",
 ].join(", ");
+
+// Pagewell's editor runs on its own origin and calls the drive API directly.
+const EDITOR_ORIGINS: Record<string, string> = {
+  dev: editorWorkersDevOrigin("dev"),
+  stage: editorWorkersDevOrigin("stage"),
+  prod: editorWorkersDevOrigin("prod"),
+};
 
 const ALLOWED_METHODS = "GET, POST, PUT, PATCH, DELETE, OPTIONS";
 const MAX_AGE = "86400";
@@ -46,11 +60,12 @@ export function isAllowedOrigin(origin: string | null, env: Env): boolean {
   if (environment === "stage" || environment === "prod") {
     if (customDomain && origin === `https://${customDomain}`) return true;
     if (origin === WORKERS_ORIGINS[environment]) return true;
+    if (origin === EDITOR_ORIGINS[environment]) return true;
     return false;
   }
 
   if (customDomain && origin === `https://${customDomain}`) return true;
-  for (const workerOrigin of Object.values(WORKERS_ORIGINS)) {
+  for (const workerOrigin of [...Object.values(WORKERS_ORIGINS), ...Object.values(EDITOR_ORIGINS)]) {
     if (origin === workerOrigin) return true;
   }
 
