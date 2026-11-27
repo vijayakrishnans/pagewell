@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Pagewell editor</title>
   <meta name="description" content="Edit a PDF in your browser with Pagewell.">
+  <meta name="pagewell-api" content="__API_ORIGIN__">
+  <meta name="pagewell-console" content="__CONSOLE_ORIGIN__">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/editor.css">
   <link rel="modulepreload" href="/pkg/__PKG__/pagewell_web_bridge.js">
@@ -26,6 +28,17 @@
   <main class="stage">
     <canvas id="editor" tabindex="0" aria-label="PDF editor"></canvas>
   </main>
+  <dialog id="conflict" aria-labelledby="conflict-title">
+    <form method="dialog">
+      <h2 id="conflict-title">Someone saved a newer version</h2>
+      <p id="conflict-text">Version <span id="conflict-version"></span> was saved while you were editing. Your changes are still here.</p>
+      <div class="dialog-actions">
+        <button class="button" value="copy" type="submit">Save as a copy</button>
+        <button class="button" value="reload" type="submit">Reload, discarding my changes</button>
+        <button class="button" value="cancel" type="submit">Keep editing</button>
+      </div>
+    </form>
+  </dialog>
   <noscript>The Pagewell editor needs JavaScript and WebAssembly.</noscript>
 </body>
 </html>

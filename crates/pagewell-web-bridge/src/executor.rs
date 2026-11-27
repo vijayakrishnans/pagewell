@@ -138,10 +138,31 @@ fn contents_json(contents: Vec<Content>) -> Value {
             .into_iter()
             .map(|c| match c {
                 Content::Json(v) => v,
-                Content::Png { data, width, height } => json!({"type": "image/png", "width": width, "height": height, "bytes": data.len()}),
+                // The PNG itself travels as base64, so the page can use a render (a thumbnail).
+                Content::Png { data, width, height } => {
+                    json!({"type": "image/png", "width": width, "height": height, "bytes": data.len(), "data": base64(&data)})
+                }
             })
             .collect(),
     )
+}
+
+/// Standard base64 (RFC 4648, with padding). Small enough not to need a crate.
+fn base64(bytes: &[u8]) -> String {
+    const ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut out = String::with_capacity(bytes.len().div_ceil(3) * 4);
+    for chunk in bytes.chunks(3) {
+        let b = [chunk[0], chunk.get(1).copied().unwrap_or(0), chunk.get(2).copied().unwrap_or(0)];
+        let n = (u32::from(b[0]) << 16) | (u32::from(b[1]) << 8) | u32::from(b[2]);
+        for i in 0..4 {
+            if i <= chunk.len() {
+                out.push(char::from(ALPHABET[((n >> (18 - 6 * i)) & 63) as usize]));
+            } else {
+                out.push('=');
+            }
+        }
+    }
+    out
 }
 
 #[cfg(test)]
@@ -231,4 +252,24 @@ mod tests {
         let junk = Snapshot { name: "junk.pdf".into(), bytes: b"not a pdf".to_vec() };
         assert!(e.run(&junk, "doc_inspect", Value::Null).is_err());
     }
+
+    #[test]
+    fn base64_matches_rfc_4648() {
+        for (raw, encoded) in [("", ""), ("f", "Zg=="), ("fo", "Zm8="), ("foo", "Zm9v"), ("foob", "Zm9vYg=="), ("fooba", "Zm9vYmE="), ("foobar", "Zm9vYmFy")] {
+            assert_eq!(base64(raw.as_bytes()), encoded);
+        }
+    }
+
+    #[test]
+    fn a_render_carries_the_png_itself() {
+        let mut e = Executor::new();
+        let out = e.run(&fixture(1), "page_render", json!({"page": 1, "dpi": 24})).expect("page_render");
+        let image = &out.result[0];
+        assert_eq!(image["type"], "image/png");
+        let data = image["data"].as_str().expect("data");
+        // "\x89PNG\r\n\x1a\n" in base64 starts "iVBORw0KGgo".
+        assert!(data.starts_with("iVBORw0KGgo"), "a PNG signature");
+        assert_eq!(data.len(), image["bytes"].as_u64().expect("bytes").div_ceil(3) as usize * 4);
+    }
 }
+
