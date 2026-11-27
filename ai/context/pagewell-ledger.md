@@ -47,13 +47,15 @@ PW-1 done (#3), PW-2 in review. Next: PW1 (editor on the web).
 - 2026-11-27: milestone table pre-approved by the user in the prompt.
 - 2026-11-27: build on `cirrus-baseline` v28, not retired `cirrus` (PW-K).
 - 2026-11-27: `PDFCRAFT_REF = v0.22.0`, the latest release; licence taken under Apache-2.0.
-- 2026-11-27: the editor bridge uses upstream's existing host mode (`data-host="page"`, `pdfcraft:open|save|dirty|ready`) rather than a new upstream hook (PW-B).
+- 2026-11-27: the editor bridge drives upstream's host hooks (`startup_inbox`, `host_save`, `host_dirty`, the `ui.command` control channel) from its own wasm entry, plus two small upstream patches (P1, P2) (PW-B).
+- 2026-11-27: the editor bundle is built by the Rust lane and pinned by `apps/editor-web` (D6); deploys never compile Rust.
 
 ## Live URLs
 
 - api-edge: https://pagewell-api-edge-stage.vijayakrishnan12994.workers.dev/health · https://pagewell-api-edge-prod.vijayakrishnan12994.workers.dev/health
 - console: https://pagewell-web-console-next-stage.vijayakrishnan12994.workers.dev · https://pagewell-web-console-next-prod.vijayakrishnan12994.workers.dev
 - repo: https://github.com/vijayakrishnans/pagewell (public)
+- editor (after PW-7 lands): https://pagewell-editor-web-stage.vijayakrishnan12994.workers.dev/edit/local
 
 ## Milestones (Orunbase ids)
 
@@ -64,15 +66,37 @@ PW0 mls_QNVAF2QE · PW1 mls_3F6D2YPV · PW2 mls_3QY0GJGR · PW3 mls_48B1ECZE · 
 | Key | Milestone | PR | Rung |
 |---|---|---|---|
 | PW-1 | PW0 | #3 (4c85ae9) | done |
-| PW-2 | PW0 | (this PR) | in review |
+| PW-2 | PW0 | #4 (c5a3f5a) | done |
+| PW-3 | PW1 | #5 (8727aaa) | done |
+| PW-5 | PW1 | #6 (3607bcb) | done |
+| PW-6 | PW1 | #7 (2903a69) | done |
+| PW-4 | PW1 | #8 (8dcfcf0) | done |
+| PW-7 | PW1 | (this PR) | in review |
 
 ## Measured budgets
 
-None yet (PW1). pdfcraft-cli v0.22.0 cold release build: 85m38s user time on the factory box.
+Editor bundle (`pagewell_web_bridge_bg.wasm`, release, wasm-bindgen 0.2.129), measured 2026-11-27:
+
+| Build | raw | gzip -9 | brotli 11 |
+|---|---:|---:|---:|
+| as built | 66,174,559 | 21,188,905 | — |
+| names and producers stripped (what ships) | 58,038,720 | 19,992,895 | 13,021,459 |
+
+Budget ≤ 8 MB compressed: **missed by ~5 MB** (13.0 MB brotli). Not yet tried: `wasm-opt -Oz`,
+`opt-level = "z"`, a lazily loaded automation module (PW-8 measures them and records the risk).
+Upstream's own web release zip is 37.4 MB. JS glue 176,904 B raw / 26,137 gzip.
+
+First page, local only (wrangler dev on the factory box, headless Chromium with SwiftShader, no
+network cost): editor ready 2.6 s, the 100-page fixture open 3.2 s from navigation. Stage
+numbers come in PW-8.
+
+Build times: wasm release build 30m34s at `-j 2` on the factory box, 10m39s on GitHub's runner;
+pdfcraft-cli v0.22.0 cold release build 85m38s user time.
 
 ## Upstream patches
 
-None.
+See `vendor/UPSTREAM-PATCHES.md`. P1 `Automation::open_bytes` (storytold/pdfcraft#8536, PR #8537);
+P2 host brand (storytold/pdfcraft#8538, no PR: upstream `main` has moved its UI).
 
 ## Open risks and deferred items
 
