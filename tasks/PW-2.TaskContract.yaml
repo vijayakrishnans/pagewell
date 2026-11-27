@@ -1,0 +1,27 @@
+# Task PW-2 (milestone PW0), minted in Orunbase with this contract inline.
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: PW-2
+spec:
+  goal: "vijayakrishnans/pagewell is a public, listing-ready OpenProduct repo: Apache-2.0 licence, notices and attribution crediting PdfCraft, security and contributing guides, a README with the non-affiliation statement, topics, secret scanning, push protection and branch protection on main."
+  affects:
+    - LICENSE
+    - NOTICE
+    - THIRD_PARTY_NOTICES.md
+    - ATTRIBUTION.md
+    - SECURITY.md
+    - CONTRIBUTING.md
+    - README.md
+    - .gitignore
+    - ai/context/pagewell-ledger.md
+    - specs/epics/pagewell-pdf-workspace/**
+    - tasks/**
+  doneWhen:
+    - gh repo view --json visibility reads PUBLIC
+    - LICENSE (Apache-2.0), NOTICE, THIRD_PARTY_NOTICES.md, ATTRIBUTION.md, SECURITY.md and CONTRIBUTING.md are on main
+    - the README opens with the Pagewell line and states it is built on PdfCraft and not affiliated with ArtCraft or Adobe
+    - repo topics include openproduct, pdf, mcp and webassembly
+    - secret scanning, push protection and branch protection on main are on
+    - PW0 is marked done in IMPLEMENTATION-STATUS.md and task_get PW-2 reads done
+  gates: []

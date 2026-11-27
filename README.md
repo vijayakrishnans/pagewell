@@ -1,5 +1,22 @@
 # Pagewell
 
+**Pagewell**: a free PDF workspace for teams, with an editor, drive, review, e-sign and agents.
+
+Open a PDF in the browser and edit it; keep it in your org's drive with
+versions; share it with members, guests or a link; review it together live;
+send it for signature; run OCR and compression off the browser; and let Claude
+or any MCP client work on your documents under the same permissions as a
+person. Pagewell is built on [PdfCraft](https://github.com/storytold/pdfcraft)
+(MIT/Apache-2.0), an open-source PDF engine and editor in pure Rust; **it is not
+affiliated with ArtCraft or Adobe**.
+
+The plan, milestone by milestone, is the epic
+[`specs/epics/pagewell-pdf-workspace/`](specs/epics/pagewell-pdf-workspace/README.md);
+what each capability's status is lives in its
+[feature matrix](specs/epics/pagewell-pdf-workspace/feature-matrix.md).
+
+## The platform underneath
+
 A multi-tenant SaaS on Cloudflare alone, kept as an
 [Orun](https://github.com/sourceplane/orun) desired-state repository:
 twelve bounded-context Workers behind one public edge API, a Next.js console
@@ -102,3 +119,10 @@ secret in the workspace.
 The product answers on workers.dev from its first deploy. To serve it on
 your own domain, follow "Setting the domain later" in
 [ai/context/operations.md](ai/context/operations.md).
+
+## Licence
+
+Apache-2.0 (see [LICENSE](LICENSE) and [NOTICE](NOTICE)). Portions from PdfCraft,
+used under Apache-2.0: see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and
+[ATTRIBUTION.md](ATTRIBUTION.md). Security reports: [SECURITY.md](SECURITY.md).
+Contributing: [CONTRIBUTING.md](CONTRIBUTING.md).

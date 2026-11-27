@@ -24,7 +24,7 @@ person.
 
 | Field | Value |
 |-------|-------|
-| Status | Draft |
+| Status | In progress |
 | Cluster | **PW** (PW0–PW11) |
 | Owner(s) | `apps/files-worker`, `apps/review-worker`, `apps/sign-worker`, `apps/pdf-jobs-worker`, `apps/ai-worker`, `apps/mcp-worker` (the resources) · `packages/contracts` + `packages/sdk` + `packages/agent-tools` (the wire) · `apps/web-console-next` + `apps/editor-web` (the surfaces) · `crates/pagewell-*` (Rust) · `containers/pdf-runner` |
 | Builds on | workspace `pagewell` (`ws_52SNF622`, account `openproduct-6ny98czp`) · `cirrus-baseline baseline-v28` (the successor of the retired `cirrus`): identity, membership, policy, events/audit, config, metering, billing, notifications, webhooks, api-edge. `storytold/pdfcraft@v0.22.0` (`ac140f80`), vendored as a git subtree |

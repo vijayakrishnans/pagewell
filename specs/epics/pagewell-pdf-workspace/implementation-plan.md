@@ -21,7 +21,7 @@ orun validate --intent intent.yaml
 orun plan --changed --intent intent.yaml --output plan.json
 ```
 
-## PW0 — the spec
+## PW0 — the spec ✅
 
 This doc set (task PW-1), then the public, listing-ready repository (task
 PW-2): Apache-2.0 `LICENSE`, `THIRD_PARTY_NOTICES.md`, `ATTRIBUTION.md`
