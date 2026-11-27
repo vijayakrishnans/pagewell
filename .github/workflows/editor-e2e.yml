@@ -52,11 +52,15 @@ jobs:
         run: pnpm --filter @pagewell/editor-web build
       - name: Browsers
         run: pnpm --dir tests/editor-e2e exec playwright install --with-deps chromium firefox webkit
+      - name: Software GL for Firefox (Xvfb + Mesa llvmpipe)
+        run: sudo apt-get install -y --no-install-recommends xvfb libgl1-mesa-dri libegl1 libegl-mesa0 libgles2
       - name: Playwright
         env:
           EDITOR_URL: ${{ matrix.target == 'stage' && 'https://pagewell-editor-web-stage.vijayakrishnan12994.workers.dev' || '' }}
+          FIREFOX_HEADED: "1"
+          LIBGL_ALWAYS_SOFTWARE: "1"
         run: |
-          s=0; pnpm --dir tests/editor-e2e exec playwright test || s=$?
+          s=0; xvfb-run -a -s "-screen 0 1280x800x24" pnpm --dir tests/editor-e2e exec playwright test || s=$?
           node tests/editor-e2e/summarize.mjs "${{ matrix.target }}" >> "$GITHUB_STEP_SUMMARY"
           exit $s
       - uses: actions/upload-artifact@v4

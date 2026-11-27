@@ -21,9 +21,17 @@ export default defineConfig({
   },
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"], launchOptions: { executablePath: process.env.CHROMIUM_PATH || undefined, args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"] } } },
-    // CI runners have no GPU, and Firefox's blocklist refuses its software GL there; the editor
-    // draws with WebGL2, so force it on for the tests.
-    { name: "firefox", use: { ...devices["Desktop Firefox"], launchOptions: { firefoxUserPrefs: { "webgl.force-enabled": true, "webgl.disabled": false } } } },
+    // CI runners have no GPU, and headless Firefox finds no GL driver there; the editor draws
+    // with WebGL2. In CI Firefox runs headed under Xvfb on Mesa's software GL (llvmpipe), with
+    // its blocklist overridden (editor-e2e.yml installs both).
+    {
+      name: "firefox",
+      use: {
+        ...devices["Desktop Firefox"],
+        headless: !process.env.FIREFOX_HEADED,
+        launchOptions: { firefoxUserPrefs: { "webgl.force-enabled": true, "webgl.disabled": false } },
+      },
+    },
     { name: "webkit", use: { ...devices["Desktop Safari"] } },
   ],
   webServer: external
