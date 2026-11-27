@@ -5,8 +5,8 @@ the code departed from `design.md`.
 
 | Milestone | State | PR |
 |---|---|---|
-| PW0 — the spec | ✅ done 2026-11-27 (PW-1 doc set; PW-2 public, listing-ready repo) | #3, PW-2 PR |
-| PW1 — editor on the web | in progress (PW-3 vendor subtree) | |
+| PW0 — the spec | ✅ done 2026-11-27 (PW-1 doc set; PW-2 public, listing-ready repo) | #3, #4 |
+| PW1 — editor on the web | in progress: PW-3 vendor subtree, PW-5 upstream hooks, PW-6 upstream links, PW-4 Rust workspace + bridge done; PW-7 editor-web on stage in review; PW-8 browsers, budgets, brand check to come | #5, #6, #7, #8, PW-7 PR |
 | PW2 — drive | | |
 | PW3 — orgs and sharing | | |
 | PW4 — heavy jobs | | |
@@ -32,3 +32,20 @@ Built from `cirrus-baseline` `baseline-v28`, the successor of the retired
 ### D3 — No product domain at bootstrap
 `pagewell.app` is not registered, so the build was not given a domain; the
 product answers on `*.vijayakrishnan12994.workers.dev` until a domain exists.
+
+### D4 — The Pagewell brand lives in the bridge, not `crates/pagewell-brand` (PW-4)
+The plan named a separate `crates/pagewell-brand`. The brand is two strings handed to
+upstream patch P2's `HostBrand`, so it is `crates/pagewell-web-bridge/src/brand.rs`, and the
+shell's wordmark and icon are in `apps/editor-web/public/`. A crate can be split out when a
+second consumer (the console, PW2) needs the marks.
+
+### D5 — The editor page is a plain module, not a React shell (PW-7)
+The page around the editor is a header (open, save, undo, status) and a canvas; the editor
+itself is egui. React would add a build step and bytes for no behaviour, so the shell is
+`public/editor.{html,js,css}`. The drive and sharing UI live in the Next.js console (PW2+).
+
+### D6 — The editor bundle is prebuilt and pinned (PW-7)
+`apps/editor-web` does not compile Rust. The Rust lane publishes the bundle on the
+`editor-artifacts` release, named by the hash of the Rust sources, and the app pins it by
+sha256 (`editor-artifact.pin.json`), the same pattern as the baseline's console artifact.
+The wasm ships as `.wasm.br` because Workers Static Assets refuse files over 25 MiB.
