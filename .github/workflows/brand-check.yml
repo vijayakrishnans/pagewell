@@ -20,6 +20,6 @@ jobs:
         with:
           node-version: "22"
       - name: The check's own tests
-        run: node --test tooling/brand-check/
+        run: node --test tooling/brand-check/check.test.mjs
       - name: No marks on user-visible surfaces
         run: node tooling/brand-check/check.mjs

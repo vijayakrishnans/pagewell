@@ -27,7 +27,9 @@ concurrency:
 jobs:
   e2e:
     name: editor · ${{ matrix.target }}
-    runs-on: ubuntu-latest
+    # Playwright's browsers and their system deps support ubuntu 24.04, not yet 26.04
+    # (ubuntu-latest since late 2026).
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     strategy:
       fail-fast: false
