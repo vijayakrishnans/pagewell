@@ -22,6 +22,7 @@ import { MeteringClient } from "./metering.js";
 import { NotificationsClient } from "./notifications.js";
 import { OrganizationsClient } from "./organizations.js";
 import { ProjectsClient } from "./projects.js";
+import { FilesClient } from "./files.js";
 import { SecurityEventsClient } from "./securityEvents.js";
 import { WebhooksClient } from "./webhooks.js";
 import { Transport, type ClientOptions } from "./transport.js";
@@ -29,6 +30,8 @@ import { Transport, type ClientOptions } from "./transport.js";
 export class Pagewell {
   readonly organizations: OrganizationsClient;
   readonly projects: ProjectsClient;
+  /** Pagewell's drive. */
+  readonly files: FilesClient;
   readonly environments: EnvironmentsClient;
   readonly memberships: MembershipsClient;
   readonly apiKeys: ApiKeysClient;
@@ -48,6 +51,7 @@ export class Pagewell {
     this.transport = new Transport(options);
     this.organizations = new OrganizationsClient(this.transport);
     this.projects = new ProjectsClient(this.transport);
+    this.files = new FilesClient(this.transport);
     this.environments = new EnvironmentsClient(this.transport);
     this.memberships = new MembershipsClient(this.transport);
     this.apiKeys = new ApiKeysClient(this.transport);
@@ -66,6 +70,7 @@ export class Pagewell {
 // Resource clients (also reachable via `client.<resource>`).
 export { OrganizationsClient } from "./organizations.js";
 export { ProjectsClient } from "./projects.js";
+export { FilesClient } from "./files.js";
 export { EnvironmentsClient } from "./environments.js";
 export { MembershipsClient } from "./memberships.js";
 export {

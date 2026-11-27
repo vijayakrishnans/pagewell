@@ -7,7 +7,7 @@ the code departed from `design.md`.
 |---|---|---|
 | PW0 — the spec | ✅ done 2026-11-27 (PW-1 doc set; PW-2 public, listing-ready repo) | #3, #4 |
 | PW1 — editor on the web | ✅ done 2026-11-28: vendor subtree (PW-3), upstream hooks P1/P2 (PW-5, PW-6), Rust workspace + bridge (PW-4), editor-web on stage (PW-7), three browsers, budgets, brand check (PW-8). Both budgets missed and recorded (risk PW-C) | #5, #6, #7, #8, #9, #10 |
-| PW2 — drive | in progress: data layer (PW-9), files worker verified but not deployed until the R2 bucket exists (PW-10), api-edge facade (PW-12) | #11, #12 |
+| PW2 — drive | in progress: data layer (PW-9), files worker verified but not deployed until the R2 bucket exists (PW-10), api-edge facade (PW-12), the drive in the console (PW-13) | #11, #12, #13 |
 | PW3 — orgs and sharing | | |
 | PW4 — heavy jobs | | |
 | PW5 — review | | |
@@ -98,3 +98,19 @@ whose browser has no WebGL2 now get a message saying so instead of a page stuck 
   the editor's workers.dev origin of the same environment, so the editor can open and save
   documents directly. Until files-worker deploys, the binding points at the fleet's
   placeholder Worker and the drive routes answer 503.
+
+### D11 — The drive lives in the console; Open hands the editor a session by postMessage (PW-13)
+- **Where.** The design's drive route `/o/:org/drive/:folder?` is `/orgs/:orgSlug/drive[/:folderId]` in
+  the baseline console (plus `/drive/trash`), first in the sidebar in both profiles. It lists
+  folders and documents with a breadcrumb, uploads by button or drop (multipart above 95 MiB,
+  with progress), creates and renames folders, moves to trash, shows version history with
+  download and restore, and shows storage used. Thumbnails in the listing come later: an
+  `<img>` cannot carry the bearer token, so they need a fetch-to-blob path or signed URLs.
+- **The editor's session.** The editor is its own origin (`apps/editor-web`) and cannot read the
+  console's storage, and there is no shared cookie domain yet (D3). Open opens the editor in a
+  new tab; when that tab posts `pagewell:hello`, the console answers that window only, at the
+  editor's origin only, with the bearer token and the API base (`lib/drive.ts` `handoffReply`).
+  The token never appears in a URL. It is the console's session token, not a narrower one:
+  risk PW-N. A product domain with a shared cookie, or a short-lived editor token minted by
+  identity-worker, replaces this.
+

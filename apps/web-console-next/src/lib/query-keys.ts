@@ -27,4 +27,9 @@ export const qk = {
   billingSummary: (orgId: string) => ["billingSummary", orgId] as const,
   entitlements: (orgId: string) => ["entitlements", orgId] as const,
   invoices: (orgId: string) => ["invoices", orgId] as const,
+  // Pagewell's drive (PW2).
+  driveFolder: (orgId: string, folderId: string | null) => ["driveFolder", orgId, folderId ?? "root"] as const,
+  driveTrash: (orgId: string) => ["driveTrash", orgId] as const,
+  driveQuota: (orgId: string) => ["driveQuota", orgId] as const,
+  driveVersions: (orgId: string, docId: string) => ["driveVersions", orgId, docId] as const,
 };

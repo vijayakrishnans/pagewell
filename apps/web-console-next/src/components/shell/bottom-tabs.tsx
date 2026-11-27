@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
-import { Building2, FolderKanban, Gauge, Settings, User2, type LucideIcon } from "lucide-react";
+import { Building2, FolderKanban, Gauge, HardDrive, Settings, User2, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { SOLO_MODE } from "@/lib/solo-mode";
 import { isLinkActive } from "./nav-items";
@@ -28,9 +28,13 @@ export function BottomTabs() {
   // Solo suppresses projects and usage (metering) at the edge: no tabs for them.
   const tabs: Tab[] = orgSlug
     ? SOLO_MODE
-      ? [{ href: `/orgs/${orgSlug}/settings`, label: "Settings", icon: Settings }]
+      ? [
+          { href: `/orgs/${orgSlug}/drive`, label: "Drive", icon: HardDrive },
+          { href: `/orgs/${orgSlug}/settings`, label: "Settings", icon: Settings },
+        ]
       : [
           { href: "/orgs", label: "Orgs", icon: Building2 },
+          { href: `/orgs/${orgSlug}/drive`, label: "Drive", icon: HardDrive },
           { href: `/orgs/${orgSlug}/projects`, label: "Projects", icon: FolderKanban },
           { href: `/orgs/${orgSlug}/usage`, label: "Usage", icon: Gauge },
           { href: `/orgs/${orgSlug}/settings`, label: "Settings", icon: Settings },

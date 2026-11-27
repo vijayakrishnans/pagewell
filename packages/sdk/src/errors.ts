@@ -208,6 +208,9 @@ export async function decodeError(
     case ERROR_CODES.RATE_LIMITED:
       return decodeRateLimit(init, response);
     default:
+      // Pagewell's drive: a stale save (`version_conflict`) is a conflict;
+      // `details.currentVersion` says which version is now current.
+      if (envelope.code === "version_conflict") return new ConflictError(init);
       // Forward-compat: unknown codes still surface a typed error.
       return new PagewellError(init);
   }
