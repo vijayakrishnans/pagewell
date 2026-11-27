@@ -53,6 +53,85 @@ debug = "line-tables-only"
 lto = "thin"
 codegen-units = 1
 
+# The editor's wasm (PW-8): optimised for size. Measured on the bridge, brotli-11: release
+# 13,019,492 B; opt-level z + fat LTO 10,272,580 B (wasm-opt -Oz on top made both larger
+# compressed, so it is not used). Native builds keep `release`.
+[profile.web]
+inherits = "release"
+opt-level = "z"
+lto = "fat"
+
+# Page rendering stays fast: opt-level z made rendering 10 pages at 150 dpi 1.9x slower
+# (928 -> 1,788 ms, headless Chromium). The PDF interpreter, rasteriser, font and codec crates
+# keep opt-level 3, as do the engine's render path and the image/PNG stack; everything else
+# (UI, tools, glue) is optimised for size.
+[profile.web.package.hayro]
+opt-level = 3
+[profile.web.package."hayro-interpret"]
+opt-level = 3
+[profile.web.package."hayro-syntax"]
+opt-level = 3
+[profile.web.package."hayro-cmap"]
+opt-level = 3
+[profile.web.package."hayro-ccitt"]
+opt-level = 3
+[profile.web.package."hayro-jbig2"]
+opt-level = 3
+[profile.web.package."hayro-jpeg2000"]
+opt-level = 3
+[profile.web.package."hayro-postscript"]
+opt-level = 3
+[profile.web.package.vello_cpu]
+opt-level = 3
+[profile.web.package.vello_common]
+opt-level = 3
+[profile.web.package.fearless_simd]
+opt-level = 3
+[profile.web.package.kurbo]
+opt-level = 3
+[profile.web.package.peniko]
+opt-level = 3
+[profile.web.package.skrifa]
+opt-level = 3
+[profile.web.package."read-fonts"]
+opt-level = 3
+[profile.web.package."font-types"]
+opt-level = 3
+[profile.web.package."zune-core"]
+opt-level = 3
+[profile.web.package."zune-inflate"]
+opt-level = 3
+[profile.web.package."zune-jpeg"]
+opt-level = 3
+[profile.web.package."zune-jpegxl"]
+opt-level = 3
+[profile.web.package.miniz_oxide]
+opt-level = 3
+[profile.web.package."zlib-rs"]
+opt-level = 3
+[profile.web.package.flate2]
+opt-level = 3
+[profile.web.package."tiny-skia"]
+opt-level = 3
+[profile.web.package."tiny-skia-path"]
+opt-level = 3
+[profile.web.package."pdfcraft-engine"]
+opt-level = 3
+[profile.web.package.image]
+opt-level = 3
+[profile.web.package.png]
+opt-level = 3
+[profile.web.package.fdeflate]
+opt-level = 3
+[profile.web.package.crc32fast]
+opt-level = 3
+[profile.web.package.adler2]
+opt-level = 3
+[profile.web.package."simd-adler32"]
+opt-level = 3
+[profile.web.package.bytemuck]
+opt-level = 3
+
 # Mirrors vendor/pdfcraft/Cargo.toml (see the note at the top).
 [patch.crates-io]
 hayro-interpret = { git = "https://github.com/storytold/craft-libs", rev = "9eb02be84f21898e247daeb2af5827c9fe85a3a0" }

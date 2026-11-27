@@ -37,7 +37,7 @@ Touches: `specs/epics/pagewell-pdf-workspace/**`, `tasks/**`, repo root docs.
 - `task_get PW-1` and `task_get PW-2` read `done`
 - `gh repo view --json visibility` reads `PUBLIC`; notices and brand rules are in place
 
-## PW1 — editor on the web
+## PW1 — editor on the web ✅
 
 PdfCraft at `PDFCRAFT_REF` as a git subtree in `vendor/pdfcraft/`; a root
 Cargo workspace whose members are `crates/pagewell-*` and which depends on the

@@ -24,6 +24,14 @@ function say(text, isError = false) {
 
 const docId = location.pathname.replace(/^\/edit\/?/, "").replace(/\/$/, "") || "local";
 
+// The editor draws with WebGL2. Without it eframe never starts, so say why instead of waiting.
+const probe = document.createElement("canvas").getContext("webgl2");
+if (!probe) {
+  say("This browser can't run the editor: WebGL2 is off or unavailable. Turn on hardware acceleration, or try another browser.", true);
+  throw new Error("WebGL2 unavailable");
+}
+probe.getExtension("WEBGL_lose_context")?.loseContext();
+
 await init();
 const editor = await PagewellEditor.mount("editor");
 window.pagewell = { editor, open: openBytes, save: saveBytes, automation, docId };

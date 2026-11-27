@@ -25,20 +25,32 @@ binding the editor's open document to an `Automation` inside the bridge. PW1
 measures this first; the fallback is a small upstream patch in
 `vendor/UPSTREAM-PATCHES.md`, also opened on `storytold/pdfcraft`.
 
-## PW-C — Wasm size and memory (RISK, open: the size budget is missed)
+## PW-C — Wasm size and memory (RISK, open: both PW1 budgets are missed)
 
 A large wasm plus large PDFs can exhaust mobile browsers. Budgets are gated
 in PW1 (≤ 8 MB compressed first load; ≤ 2 s to first page of 100 pages).
 Huge files open read-only with server-rendered pages if needed.
 
-**Measured 2026-11-27 (PW-4, PW-7):** the editor wasm with names stripped is
-58,038,720 B raw, 13,021,459 B brotli-11: **about 5 MB over** the 8 MB budget.
-The budget is not raised. PW-8 measures `wasm-opt -Oz`, `opt-level = "z"` and
-moving PdfCraft's automation tools into a second module loaded on first use,
-and records what remains here with numbers. Locally the editor was ready in
-2.6 s and showed page 1 of the 100-page fixture 3.2 s after navigation (no
-network time); stage numbers come in PW-8. The compressed bundle is cached as
-immutable, so the cost is paid once per editor version.
+**Measured (PW-4, PW-7, PW-8; numbers in `ai/context/pagewell-ledger.md`):**
+- First load: the editor wasm ships at **10,666,672 B brotli**, 2.67 MB over the
+  8 MB budget, after the size profile took it down from 13,019,492 B. Tried and
+  measured: name stripping (kept), opt-level z with fat LTO (kept, with the
+  rendering crates at opt-level 3 so pages render within ~10% of release),
+  `wasm-opt -Oz` (rejected: larger once compressed).
+- First page: 7.5 s on stage for a first visit with the release bundle (13.16 MB;
+  ~2.4 s of it download), ~2.3 s locally without network. Repeat visits use the
+  immutable cache.
+
+**The budgets are not raised.** What is left, in order of expected yield:
+1. Split PdfCraft's automation tools (used only by the assistant, PW5+) into a
+   second wasm module loaded on first use. Needs an upstream seam between the
+   editor and `pdfcraft-automation`; to be measured before it is proposed.
+2. Drop engine features the web editor does not use from the bridge build
+   (feature flags upstream would have to offer).
+3. Show page 1 before the editor is ready: a server- or worker-rendered first
+   page (PW4's renderer) while the wasm downloads.
+Owner: the editor's next milestone that touches the bridge; re-measured on every
+bundle the Rust lane publishes (the `wasm build` step summary).
 
 ## PW-D — Comments as a projection (RISK, mitigated)
 

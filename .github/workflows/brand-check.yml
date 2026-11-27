@@ -1,0 +1,25 @@
+# No ArtCraft or PdfCraft mark on a surface a Pagewell user sees (tooling/brand-check).
+name: brand
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  brand:
+    name: brand check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: The check's own tests
+        run: node --test tooling/brand-check/check.test.mjs
+      - name: No marks on user-visible surfaces
+        run: node tooling/brand-check/check.mjs

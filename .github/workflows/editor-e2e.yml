@@ -1,0 +1,74 @@
+# The editor in Chromium, Firefox and WebKit, driven through the bridge API (tests/editor-e2e).
+# Pull requests test the app built from the pinned bundle under wrangler dev; main and a dispatch
+# also test stage and record first-load timings.
+name: editor-e2e
+
+on:
+  pull_request:
+    paths:
+      - "apps/editor-web/**"
+      - "tests/editor-e2e/**"
+      - ".github/workflows/editor-e2e.yml"
+  push:
+    branches: [main]
+    paths:
+      - "apps/editor-web/**"
+      - "tests/editor-e2e/**"
+      - ".github/workflows/editor-e2e.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: editor-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    name: editor · ${{ matrix.target }}
+    # Playwright's browsers and their system deps support ubuntu 24.04, not yet 26.04
+    # (ubuntu-latest since late 2026).
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [local, stage]
+        exclude:
+          - target: ${{ github.event_name == 'pull_request' && 'stage' || 'none' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.12.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --filter @pagewell/editor-web --filter @pagewell/editor-e2e
+      - name: Build the app from the pinned bundle
+        if: matrix.target == 'local'
+        run: pnpm --filter @pagewell/editor-web build
+      - name: Browsers
+        run: pnpm --dir tests/editor-e2e exec playwright install --with-deps chromium firefox webkit
+      - name: Software GL for Firefox (Xvfb + Mesa llvmpipe)
+        run: sudo apt-get install -y --no-install-recommends xvfb libgl1-mesa-dri libegl1 libegl-mesa0 libgles2
+      - name: Playwright
+        env:
+          EDITOR_URL: ${{ matrix.target == 'stage' && 'https://pagewell-editor-web-stage.vijayakrishnan12994.workers.dev' || '' }}
+          FIREFOX_HEADED: "1"
+          LIBGL_ALWAYS_SOFTWARE: "1"
+        run: |
+          s=0; xvfb-run -a -s "-screen 0 1280x800x24" pnpm --dir tests/editor-e2e exec playwright test || s=$?
+          node tests/editor-e2e/summarize.mjs "${{ matrix.target }}" >> "$GITHUB_STEP_SUMMARY"
+          exit $s
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: editor-e2e-${{ matrix.target }}
+          path: |
+            tests/editor-e2e/test-results
+            tests/editor-e2e/playwright-report
+            tests/editor-e2e/results.json
+          retention-days: 14

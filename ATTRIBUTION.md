@@ -18,11 +18,11 @@ Those assets keep their own licences; the licence texts stay beside them in
 
 **Excluded on purpose:** the ArtCraft and PdfCraft names, wordmarks, logos and
 app icons (`docs/brand/**`, `assets/app-icon/**` upstream) are trademarks, not
-open source. Pagewell does not show them on any user-visible surface; a CI check
-from PW1 fails on any that appear.
+open source. Pagewell does not show them on any user-visible surface; the
+`brand` CI check (`tooling/brand-check`) fails on any that appear.
 
 ## Pagewell's own assets
 
 | Asset | Title | Author | Licence | Source | Used for |
 |---|---|---|---|---|---|
-| _(none yet)_ | | | | | Pagewell's marks arrive in PW1 with `crates/pagewell-brand` |
+| `apps/editor-web/public/favicon.svg`, the header icon in `editor.html` | Pagewell page mark | Pagewell contributors | Apache-2.0 | drawn for Pagewell | the editor's tab icon and header |
