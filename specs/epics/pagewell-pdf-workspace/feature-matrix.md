@@ -7,9 +7,10 @@ reason; `⛔ Blocked` is added beside the status when a row waits on
 
 | Capability | Acrobat has it | PdfCraft engine has it | Pagewell milestone | Status | Test id |
 |---|---|---|---|---|---|
-| View, search, organize, merge, split | Yes | Yes | PW1 (engine) | planned | |
-| Forms fill and author | Yes | Yes | PW1 (engine) | planned | |
-| Encryption, redaction, sanitize | Yes | Yes | PW1 (engine); server-side apply PW4 | planned | |
+| Edit a PDF in the browser: open a local file, edit, save to disk, undo tool edits | Yes | Yes (desktop, web build) | PW1 | verified (Chromium, Firefox, WebKit) | `tests/editor-e2e` › a local file opens, is edited, undone and saved to disk |
+| View, search, organize, merge, split | Yes | Yes | PW1 (engine) | shipped (the editor UI on stage; organize verified through tools, the rest not yet tested) | `tests/editor-e2e` (organize) |
+| Forms fill and author | Yes | Yes | PW1 (engine) | shipped (in the editor UI; no Pagewell test yet) | |
+| Encryption, redaction, sanitize | Yes | Yes | PW1 (engine); server-side apply PW4 | shipped in the editor UI (PW1); server-side apply planned (PW4) | |
 | OCR | Yes | Latin script | PW4 (browser and container, Latin) | planned | |
 | OCR, non-Latin scripts | Yes | No | upstream | deferred: engine limit, tracked upstream | |
 | Edit existing text | Yes | Thin | upstream roadmap | deferred: not built here (design §5) | |

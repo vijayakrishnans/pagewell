@@ -6,7 +6,7 @@ the code departed from `design.md`.
 | Milestone | State | PR |
 |---|---|---|
 | PW0 — the spec | ✅ done 2026-11-27 (PW-1 doc set; PW-2 public, listing-ready repo) | #3, #4 |
-| PW1 — editor on the web | in progress: PW-3 vendor subtree, PW-5 upstream hooks, PW-6 upstream links, PW-4 Rust workspace + bridge done; PW-7 editor-web on stage in review; PW-8 browsers, budgets, brand check to come | #5, #6, #7, #8, PW-7 PR |
+| PW1 — editor on the web | ✅ done 2026-11-28: vendor subtree (PW-3), upstream hooks P1/P2 (PW-5, PW-6), Rust workspace + bridge (PW-4), editor-web on stage (PW-7), three browsers, budgets, brand check (PW-8). Both budgets missed and recorded (risk PW-C) | #5, #6, #7, #8, #9, #10 |
 | PW2 — drive | | |
 | PW3 — orgs and sharing | | |
 | PW4 — heavy jobs | | |
@@ -49,3 +49,14 @@ itself is egui. React would add a build step and bytes for no behaviour, so the 
 `editor-artifacts` release, named by the hash of the Rust sources, and the app pins it by
 sha256 (`editor-artifact.pin.json`), the same pattern as the baseline's console artifact.
 The wasm ships as `.wasm.br` because Workers Static Assets refuse files over 25 MiB.
+
+### D7 — The editor's wasm is built with a size profile, without wasm-opt (PW-8)
+`profile.web` in `Cargo.toml`: opt-level z with fat LTO, except the PDF interpreter,
+rasteriser, font, codec and image crates, which keep opt-level 3 (opt-level z everywhere
+rendered pages 1.9x slower). `wasm-opt -Oz` was measured and rejected: it shrank the raw
+module but grew the brotli one. The design's ≤ 8 MB budget is still missed (risk PW-C).
+
+### D8 — Firefox in CI runs headed on software GL
+GitHub's runners have no GPU and headless Firefox finds no GL driver, so the editor (WebGL2)
+cannot start there. The e2e job runs Firefox headed under Xvfb on Mesa's llvmpipe. Users
+whose browser has no WebGL2 now get a message saying so instead of a page stuck loading.
