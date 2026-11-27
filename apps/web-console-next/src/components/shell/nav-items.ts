@@ -63,11 +63,14 @@ export function buildNavSections(scope: NavScope, soloMode: boolean = SOLO_MODE)
       label: soloMode ? "Account" : orgSlug ? `Org · ${orgSlug}` : "Organization",
       links: soloMode
         ? [
+            // Pagewell's drive is the product: first in both profiles.
+            { href: `${orgBase}/drive`, label: "Drive", icon: "HardDrive" },
             // Solo: projects & usage/quota are platform plumbing the B2C user
             // never sees; their surfaces collapse to the Settings (Account) panel.
             { href: `${orgBase}/settings`, label: "Settings", icon: "Settings", subPanel: true },
           ]
         : [
+            { href: `${orgBase}/drive`, label: "Drive", icon: "HardDrive" },
             { href: `${orgBase}/projects`, label: "Projects", icon: "FolderKanban" },
             { href: `${orgBase}/usage`, label: "Usage & quota", icon: "Gauge" },
             // Opens the dedicated settings panel — flagged so the renderer shows a ›.

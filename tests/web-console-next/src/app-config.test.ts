@@ -31,6 +31,7 @@ describe("resolveAppConfig", () => {
       productDescription: DEFAULT_APP_CONFIG.productDescription,
       workersDevSubdomain: "acme-inc",
       apiWorkerPrefix: "acme-cloud-api-edge",
+      editorWorkerPrefix: DEFAULT_APP_CONFIG.editorWorkerPrefix,
       storagePrefix: "acme-cloud.next",
       salesEmail: "sales@acme.dev",
       deployEnv: "stage",

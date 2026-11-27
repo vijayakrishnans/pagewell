@@ -9,6 +9,7 @@ import {
   ChevronLeft,
   ChevronRight,
   FolderKanban,
+  HardDrive,
   Boxes,
   KeyRound,
   Settings,
@@ -37,6 +38,7 @@ import { SidebarFind } from "./sidebar-find";
 const ICONS: Record<string, LucideIcon> = {
   Building2,
   FolderKanban,
+  HardDrive,
   Boxes,
   KeyRound,
   Settings,

@@ -120,3 +120,13 @@ The machine the factory runs on had no Rust toolchain (installed at PW0:
 rustc/cargo 1.100.0 with `wasm32-unknown-unknown`) and no Docker in its
 WSL distro. The `pdf-runner` image (PW4) is built in CI; local runs of it
 need Docker Desktop's WSL integration turned on.
+
+## PW-N — The editor holds the console's session token (open, 2026-11-28)
+Open in the console hands the editor tab the console's bearer token by postMessage (D11),
+because the two are separate origins with no shared cookie domain. Exposure: a script running
+on the editor origin could use it for the token's lifetime. Mitigations in place: the editor's
+CSP is `default-src 'self'` with no third-party script; the token goes to the editor origin and
+the opened window only, never into a URL; the editor keeps it in sessionStorage (that tab only).
+Fix: a product domain with a shared `HttpOnly` cookie, or a short-lived, document-scoped editor
+token from identity-worker. Decide by PW11 (prod).
+

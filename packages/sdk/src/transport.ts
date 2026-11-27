@@ -113,6 +113,33 @@ export class Transport {
     return this.performRequest<T>(input, opts);
   }
 
+  /**
+   * Send a request whose body is not JSON (a PDF, an image) or whose response
+   * is not an envelope (a PDF stream). Auth, request id and headers as for
+   * `request`; a non-2xx (other than 304) throws the decoded error. The caller
+   * reads the returned Response.
+   */
+  async send(
+    input: { method: string; path: string; query?: Record<string, string | number | undefined>; body?: BodyInit; contentType?: string },
+    opts: RequestOptions = {},
+  ): Promise<Response> {
+    const url = this.buildUrl(input.path, input.query);
+    const requestId = opts.requestId ?? generateRequestId();
+    const headers = new Headers();
+    for (const [k, v] of Object.entries(this.defaultHeaders)) headers.set(k, v);
+    if (this.auth) applyAuth(headers, this.auth);
+    if (input.contentType) headers.set("content-type", input.contentType);
+    headers.set("x-request-id", requestId);
+    if (opts.idempotencyKey !== undefined) headers.set("idempotency-key", opts.idempotencyKey);
+    if (opts.headers) for (const [k, v] of Object.entries(opts.headers)) headers.set(k, v);
+    const init: RequestInit = { method: input.method, headers };
+    if (input.body !== undefined) init.body = input.body;
+    if (opts.signal !== undefined) init.signal = opts.signal;
+    const response = await this.fetchImpl(url, init);
+    if (!response.ok && response.status !== 304) throw await decodeError(response, requestId);
+    return response;
+  }
+
   private async performRequest<T>(
     input: PerformInput,
     opts: RequestOptions,

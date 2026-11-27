@@ -21,6 +21,8 @@ export interface AppConfig {
   workersDevSubdomain: string;
   /** api-edge worker name without its `-<env>` suffix. */
   apiWorkerPrefix: string;
+  /** Pagewell's editor (apps/editor-web) worker name without its `-<env>` suffix. */
+  editorWorkerPrefix: string;
   /** Namespace prefix for console localStorage keys. */
   storagePrefix: string;
   /** Sales contact surfaced by the billing upgrade UX. */
@@ -43,6 +45,7 @@ export const DEFAULT_APP_CONFIG: AppConfig = {
   productDescription: "Next-gen control plane for your projects, environments, and entitlements.",
   workersDevSubdomain: "vijayakrishnan12994",
   apiWorkerPrefix: "pagewell-api-edge",
+  editorWorkerPrefix: "pagewell-editor-web",
   storagePrefix: "pagewell.next",
   salesEmail: "sales@sourceplane.ai",
   deployEnv: BUILD_DEPLOY_ENV,
@@ -54,6 +57,7 @@ export const RUNTIME_KEYS: Record<keyof AppConfig, string> = {
   productDescription: "CONSOLE_PRODUCT_DESCRIPTION",
   workersDevSubdomain: "CONSOLE_WORKERS_DEV_SUBDOMAIN",
   apiWorkerPrefix: "CONSOLE_API_WORKER_PREFIX",
+  editorWorkerPrefix: "CONSOLE_EDITOR_WORKER_PREFIX",
   storagePrefix: "CONSOLE_STORAGE_PREFIX",
   salesEmail: "CONSOLE_SALES_EMAIL",
   deployEnv: "CONSOLE_DEPLOY_ENV",
@@ -95,6 +99,7 @@ export function resolveAppConfig(
     productDescription: pick("productDescription") ?? defaults.productDescription,
     workersDevSubdomain: pick("workersDevSubdomain") ?? defaults.workersDevSubdomain,
     apiWorkerPrefix: pick("apiWorkerPrefix") ?? defaults.apiWorkerPrefix,
+    editorWorkerPrefix: pick("editorWorkerPrefix") ?? defaults.editorWorkerPrefix,
     storagePrefix: pick("storagePrefix") ?? defaults.storagePrefix,
     salesEmail: pick("salesEmail") ?? defaults.salesEmail,
     deployEnv: pick("deployEnv") ?? defaults.deployEnv ?? environmentFromHost(host),

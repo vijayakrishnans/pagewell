@@ -1,0 +1,24 @@
+# Task PW-13 (milestone PW2), minted in Orunbase with this contract inline.
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: PW-13
+spec:
+  goal: The console gains the drive — an SDK files client, a Drive page per org (folders, breadcrumb, upload by button and drag-and-drop, new folder, rename, move to trash, versions with restore and download, quota), a Trash page, and Open, which hands the editor a session for that tab only.
+  affects:
+    - default/pagewell/sdk
+    - default/pagewell/web-console-next
+    - default/pagewell/web-console-next-tests
+    - packages/sdk/**
+    - apps/web-console-next/**
+    - tests/web-console-next/**
+    - specs/epics/pagewell-pdf-workspace/**
+    - ai/context/**
+    - tasks/**
+  deps: [PW-12]
+  doneWhen:
+    - the SDK files client covers every drive route, including multipart upload with abort on failure (tests)
+    - Drive and Trash pages list, upload, create folders, rename, trash, restore and show versions and quota against the drive API
+    - Open hands the editor tab a session through postMessage to the editor origin only, never in a URL (tests for the handoff model)
+    - the console builds and its tests pass in CI
+  gates: []
