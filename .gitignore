@@ -38,3 +38,21 @@ apps/notifications-worker/wrangler.jsonc
 apps/admin-worker/wrangler.jsonc
 apps/integrations-worker/wrangler.jsonc
 apps/webhooks-worker/wrangler.jsonc
+
+# Pagewell (PW-2): never commit secrets, local env, build output or documents
+.env*
+!.env.example
+.dev.vars
+.dev.vars.*
+*values.yaml
+*.values.yaml
+target/
+*.wasm
+apps/editor-web/dist/
+*.pem
+*.key
+*.p12
+*.pfx
+# PDFs only from the generator; real documents never enter the repo
+*.pdf
+!**/fixtures/generated/**/*.pdf
