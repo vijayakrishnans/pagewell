@@ -37,7 +37,8 @@ export default defineConfig({
   webServer: external
     ? undefined
     : {
-        command: `pnpm --dir ../../apps/editor-web exec wrangler dev --port ${port} --ip 127.0.0.1`,
+        // The drive tests fake the API and the console on these two origins (specs/cloud.spec.mjs).
+        command: `pnpm --dir ../../apps/editor-web exec wrangler dev --port ${port} --ip 127.0.0.1 --var API_ORIGIN:http://api.test --var CONSOLE_ORIGIN:http://console.test`,
         url: `http://127.0.0.1:${port}/health`,
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,

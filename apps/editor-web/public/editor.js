@@ -1,12 +1,17 @@
 // The editor page: mounts PagewellEditor (crates/pagewell-web-bridge) on the canvas and wires
-// open, save and undo. /edit/local opens files from this device; /edit/<docId> opens a seeded
-// document (until the drive arrives in PW2, only the generated fixture).
+// open, save and undo.
+//
+//   /edit/local                 a file from this device, saved back to disk
+//   /edit/fixture               the generated 100-page fixture
+//   /edit/<doc_…>?org=<org_…>   a document in the drive (cloud.js): opened with the session the
+//                               console hands this tab, saved as the next version
 //
 // `window.pagewell` exposes the editor and the page's helpers to tests (Playwright drives the
 // bridge API through it).
 
 const pkg = document.querySelector("script[data-pkg]").dataset.pkg;
 const { default: init, PagewellEditor } = await import(`/pkg/${pkg}/pagewell_web_bridge.js`);
+const cloudModule = import("/cloud.js");
 
 const $ = (id) => document.getElementById(id);
 const status = $("status");
@@ -16,6 +21,8 @@ const canvas = $("editor");
 
 let fileName = "document.pdf";
 let fileHandle = null;
+/** Set when the open document lives in the drive: saves go there instead of to disk. */
+let cloud = null;
 
 function say(text, isError = false) {
   status.textContent = text;
@@ -34,7 +41,7 @@ probe.getExtension("WEBGL_lose_context")?.loseContext();
 
 await init();
 const editor = await PagewellEditor.mount("editor");
-window.pagewell = { editor, open: openBytes, save: saveBytes, automation, docId };
+window.pagewell = { editor, open: openBytes, save: saveBytes, automation, docId, get cloud() { return cloud; } };
 
 canvas.addEventListener("pagewell:dirty", (e) => {
   say(e.detail.dirty ? `${fileName} — unsaved changes` : fileName);
@@ -42,8 +49,14 @@ canvas.addEventListener("pagewell:dirty", (e) => {
 canvas.addEventListener("pagewell:error", (e) => say(e.detail.message, true));
 // A save started inside the editor (its menu or Ctrl+S) arrives as an event.
 canvas.addEventListener("pagewell:save", (e) => {
-  writeOut(e.detail.bytes, e.detail.name || fileName).catch((err) => say(String(err), true));
+  store(e.detail.bytes, e.detail.name || fileName).catch((err) => say(String(err), true));
 });
+
+/** Save where the document came from: the drive, or this device. */
+async function store(bytes, name) {
+  if (cloud) return cloud.save(bytes);
+  return writeOut(bytes, name);
+}
 
 function openBytes(bytes, name) {
   fileName = name || "document.pdf";
@@ -86,7 +99,7 @@ $("open").addEventListener("change", async (e) => {
 
 saveButton.addEventListener("click", async () => {
   try {
-    await writeOut(await editor.save(), fileName);
+    await store(await editor.save(), fileName);
   } catch (err) {
     if (err?.name !== "AbortError") say(String(err), true);
   }
@@ -103,12 +116,22 @@ async function automation(call) {
   return reply;
 }
 
+// Set when the page navigates on purpose (to a copy it just saved), so the guard stays quiet.
+let leaving = false;
 window.addEventListener("beforeunload", (e) => {
-  if (editor.isDirty()) e.preventDefault();
+  if (!leaving && editor.isDirty()) e.preventDefault();
 });
+function leave(href) {
+  leaving = true;
+  location.assign(href);
+}
 
 if (docId === "local") {
   say("Open a PDF from this device to start.");
+} else if (docId.startsWith("doc_")) {
+  const { openFromDrive } = await cloudModule;
+  cloud = await openFromDrive({ docId, say, openBytes, automation, leave });
+  if (cloud) $("open-label").hidden = true;
 } else {
   say("Opening…");
   const res = await fetch(`/fixtures/${encodeURIComponent(docId)}.pdf`);
