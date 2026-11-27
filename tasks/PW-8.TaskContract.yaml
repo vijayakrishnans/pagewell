@@ -1,0 +1,28 @@
+# Task PW-8 (milestone PW1), minted in Orunbase with this contract inline.
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: PW-8
+spec:
+  goal: Close PW1 — Playwright drives the editor through the bridge API in Chromium, Firefox and WebKit (open, edit, save, undo, plus a screenshot smoke), the size and first-page budgets are measured on stage after trying wasm-opt and a size-optimised build, a CI check fails on any ArtCraft or PdfCraft mark on a user-visible surface, and PW1 is marked done.
+  affects:
+    - tests/editor-e2e/**
+    - tooling/brand-check/**
+    - .github/workflows/editor-e2e.yml
+    - .github/workflows/brand-check.yml
+    - .github/workflows/rust.yml
+    - Cargo.toml
+    - crates/pagewell-web-bridge/**
+    - apps/editor-web/**
+    - ATTRIBUTION.md
+    - pnpm-lock.yaml
+    - specs/epics/pagewell-pdf-workspace/**
+    - ai/context/**
+    - tasks/**
+  doneWhen:
+    - a local file opens, is edited and saves in Chromium, Firefox and WebKit (Playwright through the bridge API, with a screenshot per browser), green in CI
+    - first-load size and first-page time on stage are measured against the budgets and recorded in the ledger, with wasm-opt and opt-level z tried; a miss is a risk entry with numbers
+    - the brand check runs in CI and passes; it fails on an ArtCraft or PdfCraft mark in apps/ or crates/ user-visible text
+    - PW1 is marked done in implementation-plan.md and IMPLEMENTATION-STATUS.md, and the feature matrix and ledger are updated
+    - task_get PW-8 reads done
+  gates: []

@@ -28,6 +28,11 @@ on:
   # Publish the editor bundle from a branch (its hash names the Rust sources, so a bundle
   # built anywhere is the same bundle).
   workflow_dispatch:
+    inputs:
+      size:
+        description: "Also measure the size experiments (wasm-opt, opt-level z)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -122,3 +127,67 @@ jobs:
           fi
           url="https://github.com/${GITHUB_REPOSITORY}/releases/download/editor-artifacts/$ASSET"
           { echo; echo "Published: $url"; } >> "$GITHUB_STEP_SUMMARY"
+
+  # PW-8: how small can the editor get? Dispatch only. Each variant builds the bridge, strips
+  # names, runs binaryen's wasm-opt -Oz and reports raw, gzip and brotli to the step summary.
+  # Profile settings come from CARGO_PROFILE_* so Cargo.toml (and the bundle's source hash)
+  # stay as they are until a variant is adopted.
+  size:
+    name: size · ${{ matrix.variant }}
+    if: github.event_name == 'workflow_dispatch' && inputs.size
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: release
+            opt: "3"
+            lto: thin
+          - variant: opt-z-fat-lto
+            opt: z
+            lto: fat
+    env:
+      BINARYEN_VERSION: version_133
+      CARGO_PROFILE_RELEASE_OPT_LEVEL: ${{ matrix.opt }}
+      CARGO_PROFILE_RELEASE_LTO: ${{ matrix.lto }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain (rust-toolchain.toml)
+        run: rustup show active-toolchain || rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: pagewell-size-${{ matrix.variant }}
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-bindgen@${{ env.WASM_BINDGEN_VERSION }}
+      - name: binaryen (pinned, checksum verified)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          f="binaryen-${BINARYEN_VERSION}-x86_64-linux.tar.gz"
+          gh release download "$BINARYEN_VERSION" -R WebAssembly/binaryen -p "$f" -p "$f.sha256" -D "$RUNNER_TEMP"
+          (cd "$RUNNER_TEMP" && sha256sum -c "$f.sha256")
+          tar -xzf "$RUNNER_TEMP/$f" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/binaryen-${BINARYEN_VERSION}/bin" >> "$GITHUB_PATH"
+      - name: Build the bridge for wasm32
+        run: cargo build --release --locked --target wasm32-unknown-unknown -p pagewell-web-bridge
+      - name: Strip and optimise
+        run: |
+          wasm-bindgen --target web --remove-name-section --remove-producers-section --out-dir out target/wasm32-unknown-unknown/release/pagewell_web_bridge.wasm
+          /usr/bin/time -v wasm-opt -Oz --all-features --strip-debug --strip-producers \
+            -o out/oz.wasm out/pagewell_web_bridge_bg.wasm 2> wasm-opt.time
+          grep -E 'Elapsed|Maximum resident' wasm-opt.time
+      - name: Sizes
+        run: |
+          size() { node -e '
+            const z=require("zlib"),b=require("fs").readFileSync(process.argv[1]);
+            const br=z.brotliCompressSync(b,{params:{[z.constants.BROTLI_PARAM_QUALITY]:11,[z.constants.BROTLI_PARAM_LGWIN]:24,[z.constants.BROTLI_PARAM_SIZE_HINT]:b.length}});
+            console.log(`| ${process.argv[2]} | ${b.length} | ${z.gzipSync(b,{level:9}).length} | ${br.length} |`)' "$1" "$2"; }
+          {
+            echo "### ${{ matrix.variant }} (opt-level ${{ matrix.opt }}, lto ${{ matrix.lto }})"
+            echo "| wasm | raw | gzip -9 | brotli 11 |"
+            echo "|---|---:|---:|---:|"
+            size out/pagewell_web_bridge_bg.wasm "names stripped"
+            size out/oz.wasm "+ wasm-opt -Oz"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
