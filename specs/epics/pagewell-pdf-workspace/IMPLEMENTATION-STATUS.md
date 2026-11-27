@@ -6,7 +6,7 @@ the code departed from `design.md`.
 | Milestone | State | PR |
 |---|---|---|
 | PW0 — the spec | ✅ done 2026-11-27 (PW-1 doc set; PW-2 public, listing-ready repo) | #3, PW-2 PR |
-| PW1 — editor on the web | | |
+| PW1 — editor on the web | in progress (PW-3 vendor subtree) | |
 | PW2 — drive | | |
 | PW3 — orgs and sharing | | |
 | PW4 — heavy jobs | | |

@@ -1,0 +1,18 @@
+# Task PW-3 (milestone PW1), minted in Orunbase with this contract inline.
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: PW-3
+spec:
+  goal: PdfCraft v0.22.0 (ac140f80) lives unmodified in vendor/pdfcraft/ as a squashed git subtree, with its licence texts, NOTICE and ATTRIBUTION.md, and vendor/UPSTREAM-PATCHES.md records the ref and the (empty) patch list.
+  affects:
+    - vendor/pdfcraft/**
+    - vendor/UPSTREAM-PATCHES.md
+    - specs/epics/pagewell-pdf-workspace/**
+    - tasks/**
+  doneWhen:
+    - vendor/pdfcraft/ on main is byte-identical to storytold/pdfcraft at v0.22.0 (git diff of the subtree against the tag is empty)
+    - vendor/pdfcraft/LICENSE-APACHE, LICENSE-MIT, NOTICE and ATTRIBUTION.md are present
+    - vendor/UPSTREAM-PATCHES.md names PDFCRAFT_REF and lists no patches
+    - task_get PW-3 reads done
+  gates: []
