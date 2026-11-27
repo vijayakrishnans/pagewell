@@ -1,0 +1,23 @@
+# Task PW-14 (milestone PW2), minted in Orunbase with this contract inline.
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: PW-14
+spec:
+  goal: The editor opens a drive document (/edit/<docId>?org=) with the session the console hands it, saves a new version on its base, offers Save as copy or Reload on 409 version_conflict, and sends a page-1 thumbnail and the extracted text with each save; the bridge returns rendered PNG data so it can.
+  affects:
+    - default/pagewell/editor-web
+    - apps/editor-web/**
+    - crates/pagewell-web-bridge/**
+    - Cargo.lock
+    - tests/editor-e2e/**
+    - specs/epics/pagewell-pdf-workspace/**
+    - ai/context/**
+    - tasks/**
+  deps: [PW-12]
+  doneWhen:
+    - a drive document opens in the editor from the console's handoff and saves as the next version; a stale save shows Save as copy and Reload
+    - a save also stores a page-1 thumbnail and the extracted text for that version
+    - the session is accepted only from the console's origin and kept in sessionStorage for that tab, never in a URL
+    - the editor bundle is rebuilt and pinned, and the e2e suite stays green
+  gates: []

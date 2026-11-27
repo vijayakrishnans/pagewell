@@ -7,7 +7,7 @@ the code departed from `design.md`.
 |---|---|---|
 | PW0 — the spec | ✅ done 2026-11-27 (PW-1 doc set; PW-2 public, listing-ready repo) | #3, #4 |
 | PW1 — editor on the web | ✅ done 2026-11-28: vendor subtree (PW-3), upstream hooks P1/P2 (PW-5, PW-6), Rust workspace + bridge (PW-4), editor-web on stage (PW-7), three browsers, budgets, brand check (PW-8). Both budgets missed and recorded (risk PW-C) | #5, #6, #7, #8, #9, #10 |
-| PW2 — drive | in progress: data layer (PW-9), files worker verified but not deployed until the R2 bucket exists (PW-10), api-edge facade (PW-12), the drive in the console (PW-13) | #11, #12, #13 |
+| PW2 — drive | in progress: data layer (PW-9), files worker verified but not deployed until the R2 bucket exists (PW-10), api-edge facade (PW-12), the drive in the console (PW-13), the editor opens and saves drive documents (PW-14) | #11, #12, #13, #14 |
 | PW3 — orgs and sharing | | |
 | PW4 — heavy jobs | | |
 | PW5 — review | | |
@@ -113,4 +113,12 @@ whose browser has no WebGL2 now get a message saying so instead of a page stuck 
   The token never appears in a URL. It is the console's session token, not a narrower one:
   risk PW-N. A product domain with a shared cookie, or a short-lived editor token minted by
   identity-worker, replaces this.
+- **The editor's side (PW-14).** `/edit/<doc_…>?org=<org_…>` asks the opener for the session as
+  soon as the page loads, accepts it only from the console's origin and the opener window, for
+  this org and this API, and keeps it in sessionStorage. The worker derives the paired API and
+  console origins from its own host (`pagewell-editor-web-<env>` → `pagewell-api-edge-<env>`,
+  `pagewell-web-console-next-<env>`), writes them into the page, and allows that API alone in
+  `connect-src`. A stale save opens a dialog: save as a copy (it opens), reload, or keep
+  editing. Each save sends a 36 dpi page-1 PNG and `text_extract`'s text, best-effort. The
+  edit lease (`DocRoom`) is not built yet: concurrent editors are caught by `baseVersion` alone.
 

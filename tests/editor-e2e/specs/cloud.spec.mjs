@@ -112,11 +112,11 @@ test("a drive document opens from the console's handoff, saves as the next versi
   await editor.locator("#save").click();
   await expect(editor.locator("#status")).toContainText("Saved version 2");
   expect(drive.saves).toEqual([{ baseVersion: 1, pages: "4", head: "%PDF-" }]);
-  await expect.poll(() => drive.thumbnails.length).toBe(1);
-  expect(drive.thumbnails[0]).toEqual({ path: `/documents/${DOC}/versions/2/thumbnail`, type: "image/png", head: "PNG" });
   await expect.poll(() => drive.texts.length).toBe(1);
   expect(drive.texts[0].pages).toHaveLength(4);
   expect(JSON.stringify(drive.texts[0])).toContain("Nothing here is a real document");
+  await expect.poll(() => drive.thumbnails.length).toBe(1);
+  expect(drive.thumbnails[0]).toEqual({ path: `/documents/${DOC}/versions/2/thumbnail`, type: "image/png", head: "PNG" });
 });
 
 test("a stale save offers a copy, and the copy opens", async ({ context, page }) => {
