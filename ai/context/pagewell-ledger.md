@@ -10,7 +10,7 @@ Read this first on every resume. Then the notes file
 Phase A done: workspace `ws_52SNF622` in `openproduct-6ny98czp` (the user's
 decision, superseding `openproduct-sms84q22`), cirrus-baseline bootstrapped
 in ~6 min, stage and prod healthy. Epic EP-2 minted with PW0–PW11.
-PW0 ✅, PW1 ✅. PW2 (drive) in progress: PW-9 is the data layer. Blocker W3
+PW0 ✅, PW1 ✅. PW2 (drive) in progress: data layer (PW-9) merged, files worker (PW-10). Blocker W3
 (`CLOUDFLARE_R2_TOKEN`, the user's to create) holds only the bucket root
 and the stage deploy of the files worker.
 
@@ -77,7 +77,8 @@ PW0 mls_QNVAF2QE · PW1 mls_3F6D2YPV · PW2 mls_3QY0GJGR · PW3 mls_48B1ECZE · 
 | PW-4 | PW1 | #8 (8dcfcf0) | done |
 | PW-7 | PW1 | #9 (452de5d) | done |
 | PW-8 | PW1 | #10 (0769a17) | done |
-| PW-9 | PW2 | — | in progress |
+| PW-9 | PW2 | #11 (10ae82d) | done |
+| PW-10 | PW2 | — | in progress |
 
 ## Measured budgets
 

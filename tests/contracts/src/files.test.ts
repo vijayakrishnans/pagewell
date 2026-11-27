@@ -9,11 +9,11 @@ const ORG = "aaaaaaaa-0000-4000-8000-00000000000a";
 const OTHER = "bbbbbbbb-0000-4000-8000-00000000000b";
 const DOC = "dddddddd-0000-4000-8000-00000000000d";
 const UPL = "eeeeeeee-0000-4000-8000-00000000000e";
-const SHA = "ab".repeat(32);
+const BLOB = "ffffffff-0000-4000-8000-00000000000f";
 
 describe("r2Key", () => {
   it("builds every key under org/<orgId>/", () => {
-    expect(r2Key.blob(ORG, DOC, SHA)).toBe(`org/${ORG}/doc/${DOC}/blob/${SHA}.pdf`);
+    expect(r2Key.blob(ORG, DOC, BLOB)).toBe(`org/${ORG}/doc/${DOC}/blob/${BLOB}.pdf`);
     expect(r2Key.thumb(ORG, DOC, 2, 1)).toBe(`org/${ORG}/doc/${DOC}/thumb/2/1.webp`);
     expect(r2Key.text(ORG, DOC, 3)).toBe(`org/${ORG}/doc/${DOC}/text/3.json`);
     expect(r2Key.upload(ORG, UPL)).toBe(`org/${ORG}/tmp/${UPL}`);
@@ -22,13 +22,13 @@ describe("r2Key", () => {
   });
 
   it.each([
-    ["an empty org id", () => r2Key.blob("", DOC, SHA)],
-    ["a path in the org id", () => r2Key.blob(`${ORG}/../${OTHER}`, DOC, SHA)],
-    ["a public id where a uuid belongs", () => r2Key.blob("org_aaaaaaaa00004000800000000000000a", DOC, SHA)],
+    ["an empty org id", () => r2Key.blob("", DOC, BLOB)],
+    ["a path in the org id", () => r2Key.blob(`${ORG}/../${OTHER}`, DOC, BLOB)],
+    ["a public id where a uuid belongs", () => r2Key.blob("org_aaaaaaaa00004000800000000000000a", DOC, BLOB)],
     ["an upper-case uuid", () => r2Key.upload(ORG.toUpperCase(), UPL)],
     ["a traversal in the document id", () => r2Key.text(ORG, "../x", 1)],
-    ["a short sha256", () => r2Key.blob(ORG, DOC, "abc")],
-    ["a slash in the sha256", () => r2Key.blob(ORG, DOC, `${"a".repeat(63)}/`)],
+    ["a sha256 where a blob id belongs", () => r2Key.blob(ORG, DOC, "ab".repeat(32))],
+    ["a slash in the blob id", () => r2Key.blob(ORG, DOC, `${BLOB}/x`)],
     ["version 0", () => r2Key.text(ORG, DOC, 0)],
     ["a fractional page", () => r2Key.thumb(ORG, DOC, 1, 1.5)],
   ])("refuses %s", (_what, build) => {
@@ -36,7 +36,7 @@ describe("r2Key", () => {
   });
 
   it("tells whether a stored key belongs to an org", () => {
-    const key = r2Key.blob(ORG, DOC, SHA);
+    const key = r2Key.blob(ORG, DOC, BLOB);
     expect(keyBelongsTo(key, ORG)).toBe(true);
     expect(keyBelongsTo(key, OTHER)).toBe(false);
     expect(keyBelongsTo(`org/${ORG}/../${OTHER}/x`, ORG)).toBe(false);

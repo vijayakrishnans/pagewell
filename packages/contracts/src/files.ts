@@ -63,10 +63,11 @@ export interface PublicTrashEntry {
   purgeAt: string;
 }
 
+/** null = unlimited on this org's plan. */
 export interface FilesQuota {
-  storageBytes: { used: number; limit: number };
-  maxFileBytes: number;
-  maxVersionsPerDocument: number;
+  storageBytes: { used: number; limit: number | null };
+  maxFileBytes: number | null;
+  maxVersionsPerDocument: number | null;
 }
 
 // Folders
@@ -91,7 +92,9 @@ export interface FolderListingResponse {
 
 // Documents. A small upload is one request: POST /documents with the PDF as the
 // body (Content-Type: application/pdf) and ?name=&folderId=. A large one uses
-// the multipart flow under /uploads.
+// the multipart flow under /uploads. Optional headers on any PDF body:
+// X-Pagewell-Page-Count (the browser counted them).
+export const PAGE_COUNT_HEADER = "x-pagewell-page-count";
 export interface DocumentResponse {
   document: PublicDocument;
 }
@@ -131,7 +134,13 @@ export interface CreateUploadRequest {
   /** Present when the upload becomes a new version of this document. */
   docId?: string | null;
   baseVersion?: number | null;
+  /** Total bytes; checked against the file-size and storage quotas before any part is sent. */
   size: number;
+}
+export interface CompleteUploadRequest {
+  /** Hex sha256 of the whole file; the stored object is checked against it. */
+  sha256: string;
+  pageCount?: number | null;
 }
 export interface UploadResponse {
   upload: { id: string; partSize: number; expiresAt: string };
@@ -139,6 +148,8 @@ export interface UploadResponse {
 export interface UploadPartResponse {
   partNumber: number;
 }
+/** Completing an upload answers like a direct upload or a save. */
+export type CompleteUploadResponse = CreateDocumentResponse | CreateVersionResponse;
 
 // Trash and quota
 export interface ListTrashResponse {
@@ -150,3 +161,27 @@ export interface FilesQuotaResponse {
 
 /** How long the trash keeps an item. */
 export const TRASH_RETENTION_DAYS = 30;
+
+/** Billing entitlement keys the drive's quotas read (quantity entitlements; null = unlimited). */
+export const FILES_ENTITLEMENTS = {
+  STORAGE_BYTES: "files.storage_bytes",
+  MAX_FILE_BYTES: "files.max_file_bytes",
+  VERSIONS_PER_DOCUMENT: "files.versions_per_document",
+} as const;
+
+/**
+ * The free tier: what an org gets when its plan configures none of the keys
+ * above (and what applies if billing cannot be reached; never unlimited).
+ */
+export const FILES_FREE_TIER = {
+  storageBytes: 2 * 1024 ** 3,
+  maxFileBytes: 100 * 1024 ** 2,
+  versionsPerDocument: 100,
+} as const;
+
+/** Largest body one request may carry; bigger files use the multipart flow. */
+export const SINGLE_UPLOAD_MAX_BYTES = 95 * 1024 ** 2;
+/** Multipart part size (R2 needs ≥ 5 MiB for every part but the last). */
+export const UPLOAD_PART_BYTES = 10 * 1024 ** 2;
+/** An unfinished multipart upload is aborted after this long. */
+export const UPLOAD_TTL_HOURS = 24;

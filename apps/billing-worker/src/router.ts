@@ -34,6 +34,8 @@ const INTERNAL_CALLER_HEADER = "x-internal-caller";
 const INTERNAL_CALLER_RE = /^[a-z][a-z0-9-]{0,63}$/;
 const ALLOWED_INTERNAL_CALLERS: ReadonlySet<string> = new Set([
   "projects-worker",
+  // Pagewell's drive reads its quota entitlements (PW-10).
+  "files-worker",
   "membership-worker",
   "integrations-worker",
   // api-edge forwards verified-at-source-of-truth inbound provider webhooks
