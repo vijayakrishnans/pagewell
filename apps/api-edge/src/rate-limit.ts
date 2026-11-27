@@ -57,7 +57,8 @@ export type RouteFamily =
   | "billing"
   | "audit"
   | "notifications"
-  | "integrations";
+  | "integrations"
+  | "files";
 
 interface BucketLimits {
   /** Bucket capacity (max tokens). */
@@ -119,6 +120,13 @@ const LIMITS: Record<RouteFamily, FamilyConfig> = {
   integrations: {
     identity: { limit: 60, windowSec: 60 },
     org: { limit: 300, windowSec: 60 },
+  },
+  // Pagewell's drive: a multipart upload is one request per 10 MiB part, and
+  // opening a folder fetches a thumbnail per document, so the drive needs
+  // more headroom than the control-plane families.
+  files: {
+    identity: { limit: 300, windowSec: 60 },
+    org: { limit: 1500, windowSec: 60 },
   },
 };
 

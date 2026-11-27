@@ -1,0 +1,23 @@
+# Task PW-12 (milestone PW2), minted in Orunbase with this contract inline.
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: PW-12
+spec:
+  goal: api-edge routes /v1/organizations/{org}/folders, documents, uploads, trash and quota to files-worker over a FILES_WORKER binding, streaming bodies both ways, with its own rate-limit family and CORS that admits the editor's origin.
+  affects:
+    - default/pagewell/api-edge
+    - default/pagewell/api-edge-tests
+    - default/pagewell/policy-worker
+    - apps/api-edge/**
+    - tests/api-edge/**
+    - apps/policy-worker/component.yaml
+    - specs/epics/pagewell-pdf-workspace/**
+    - ai/context/**
+    - tasks/**
+  deps: [PW-10]
+  doneWhen:
+    - the files facade forwards the drive routes with the actor and the drive headers, never the bearer token, and streams bodies both ways (tests)
+    - CORS admits the editor origin of the same environment only and exposes ETag and X-Pagewell-Version (tests)
+    - the api-edge suite is green in CI and api-edge deploys to stage with the FILES_WORKER binding
+  gates: []

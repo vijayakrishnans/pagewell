@@ -11,6 +11,14 @@ export const WORKERS_DEV_SUBDOMAIN = "vijayakrishnan12994";
 /** Worker name prefix of the console delivery (per-env: `${prefix}-${env}`). */
 export const CONSOLE_WORKER_PREFIX = "pagewell-web-console-next";
 
+/** Worker name prefix of Pagewell's editor (apps/editor-web), per env. */
+export const EDITOR_WORKER_PREFIX = "pagewell-editor-web";
+
+/** workers.dev origin of the editor for a given environment name. */
+export function editorWorkersDevOrigin(environment: string): string {
+  return `https://${EDITOR_WORKER_PREFIX}-${environment}.${WORKERS_DEV_SUBDOMAIN}.workers.dev`;
+}
+
 /** workers.dev origin of the console for a given environment name. */
 export function consoleWorkersDevOrigin(environment: string): string {
   return `https://${CONSOLE_WORKER_PREFIX}-${environment}.${WORKERS_DEV_SUBDOMAIN}.workers.dev`;
