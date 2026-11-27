@@ -1,0 +1,24 @@
+# Task PW-4 (milestone PW1), minted in Orunbase with this contract inline.
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: PW-4
+spec:
+  goal: A root Cargo workspace builds crates/pagewell-web-bridge for wasm32 against the vendored PdfCraft crates, exposing open, save, isDirty, automation (Automation::call on a snapshot of the open document, with undo) and dirty/error/ready events to JavaScript, checked by a Rust CI lane.
+  affects:
+    - Cargo.toml
+    - Cargo.lock
+    - .cargo/**
+    - rust-toolchain.toml
+    - rustfmt.toml
+    - crates/pagewell-web-bridge/**
+    - .github/workflows/rust.yml
+    - specs/epics/pagewell-pdf-workspace/**
+    - tasks/**
+  doneWhen:
+    - cargo fmt --check, cargo clippy --workspace -- -D warnings and cargo test --workspace pass at the root
+    - cargo build --release --target wasm32-unknown-unknown -p pagewell-web-bridge succeeds and wasm-bindgen produces the JS module
+    - unit tests cover open/save round trip, automation on a snapshot, and undo
+    - the rust CI lane is green on the PR
+    - task_get PW-4 reads done
+  gates: []

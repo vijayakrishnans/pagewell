@@ -1,0 +1,6 @@
+# As vendor/pdfcraft/clippy.toml: tests may unwrap, expect and panic; product code may not
+# (Cargo.toml [workspace.lints]).
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+allow-panic-in-tests = true
+allow-indexing-slicing-in-tests = true

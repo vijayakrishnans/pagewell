@@ -1,0 +1,10 @@
+# Mirrors vendor/pdfcraft/.cargo/config.toml for the settings the vendored crates need.
+
+# WebAssembly SIMD: every current browser has it, and PdfCraft's OCR and rendering kernels only
+# use it when compiled in.
+[target.wasm32-unknown-unknown]
+rustflags = ["-C", "target-feature=+simd128"]
+
+# aws-lc (PdfCraft's signatures) detects the CPU when main asks, not in a static initializer.
+[env]
+AWS_LC_SYS_CFLAGS = "-DBORINGSSL_NO_STATIC_INITIALIZER"
