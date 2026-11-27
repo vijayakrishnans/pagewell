@@ -7,7 +7,7 @@ the code departed from `design.md`.
 |---|---|---|
 | PW0 — the spec | ✅ done 2026-11-27 (PW-1 doc set; PW-2 public, listing-ready repo) | #3, #4 |
 | PW1 — editor on the web | ✅ done 2026-11-28: vendor subtree (PW-3), upstream hooks P1/P2 (PW-5, PW-6), Rust workspace + bridge (PW-4), editor-web on stage (PW-7), three browsers, budgets, brand check (PW-8). Both budgets missed and recorded (risk PW-C) | #5, #6, #7, #8, #9, #10 |
-| PW2 — drive | | |
+| PW2 — drive | in progress: data layer (PW-9) | |
 | PW3 — orgs and sharing | | |
 | PW4 — heavy jobs | | |
 | PW5 — review | | |
@@ -60,3 +60,14 @@ module but grew the brotli one. The design's ≤ 8 MB budget is still missed (ri
 GitHub's runners have no GPU and headless Firefox finds no GL driver, so the editor (WebGL2)
 cannot start there. The e2e job runs Firefox headed under Xvfb on Mesa's llvmpipe. Users
 whose browser has no WebGL2 now get a message saying so instead of a page stuck loading.
+
+### D9 — Drive migration is `200_files_core`; version bytes are content-addressed (PW-9)
+- **Migration number.** The plan names `100_files_core`, but the baseline already uses 100
+  (`100_metering_foundation`) and runs to 190. The drive's migration is `200_files_core`, in a
+  new `files` bounded context; Pagewell's later migrations follow from 200.
+- **R2 key for a version.** The design's `org/<orgId>/doc/<docId>/v/<version>.pdf` would let two
+  writers racing on the same `baseVersion` write the same key before the database decides which
+  one wins, so the loser could overwrite the winner's bytes. A version's bytes are stored at
+  `org/<orgId>/doc/<docId>/blob/<sha256>.pdf` instead: a racing write never clobbers another, and
+  a restore points the new version at the old object (storage counts it once). The helper in
+  `packages/shared/src/r2-keys.ts` is the only place keys are built.

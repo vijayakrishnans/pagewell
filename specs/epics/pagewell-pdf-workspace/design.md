@@ -145,7 +145,7 @@ plus retry, and deletes are soft with a 30-day trash.
 **R2 layout** (bucket `pagewell-files-<env>`, never public):
 
 ```
-org/<orgId>/doc/<docId>/v/<version>.pdf
+org/<orgId>/doc/<docId>/blob/<sha256>.pdf      (a version's bytes; content-addressed, D9)
 org/<orgId>/doc/<docId>/thumb/<version>/<page>.webp
 org/<orgId>/doc/<docId>/text/<version>.json
 org/<orgId>/tmp/<uploadId>

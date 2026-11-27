@@ -62,7 +62,7 @@ CI workflow, `packages/contracts` (bridge types).
 bucket per env, multipart uploads, `baseVersion` conflicts, open from and
 save to the cloud, thumbnails and text sent by the browser with a save,
 30-day trash, quotas from Cirrus metering, drive UI in
-`apps/web-console-next`. Migration `100_files_core` in `packages/db`; wire
+`apps/web-console-next`. Migration `200_files_core` in `packages/db` (D9); wire
 types in `packages/contracts`; facades in `api-edge`.
 
 **Done when**

@@ -5,12 +5,14 @@ Read this first on every resume. Then the notes file
 `task_get pagewell-pdf-workspace`, `specs/epics/pagewell-pdf-workspace/IMPLEMENTATION-STATUS.md`,
 `feature-matrix.md` and `gh pr list --state all`.
 
-## Status (2026-11-27)
+## Status (2026-11-28)
 
 Phase A done: workspace `ws_52SNF622` in `openproduct-6ny98czp` (the user's
 decision, superseding `openproduct-sms84q22`), cirrus-baseline bootstrapped
-in ~6 min, stage and prod healthy. Epic EP-2 minted with PW0–PW11. PW0:
-PW-1 done (#3), PW-2 in review. Next: PW1 (editor on the web).
+in ~6 min, stage and prod healthy. Epic EP-2 minted with PW0–PW11.
+PW0 ✅, PW1 ✅. PW2 (drive) in progress: PW-9 is the data layer. Blocker W3
+(`CLOUDFLARE_R2_TOKEN`, the user's to create) holds only the bucket root
+and the stage deploy of the files worker.
 
 ## Inputs actually used
 
@@ -74,7 +76,8 @@ PW0 mls_QNVAF2QE · PW1 mls_3F6D2YPV · PW2 mls_3QY0GJGR · PW3 mls_48B1ECZE · 
 | PW-6 | PW1 | #7 (2903a69) | done |
 | PW-4 | PW1 | #8 (8dcfcf0) | done |
 | PW-7 | PW1 | #9 (452de5d) | done |
-| PW-8 | PW1 | #10 | in review |
+| PW-8 | PW1 | #10 (0769a17) | done |
+| PW-9 | PW2 | — | in progress |
 
 ## Measured budgets
 
@@ -97,8 +100,19 @@ slower rendering. Plus 176,904 B of JS glue (26,137 gzip) and the page (< 10 KB)
 **First page (budget ≤ 2 s for the 100-page fixture): missed on a first visit.** Stage, release
 bundle, headless Chromium from the factory box (2026-11-27): first page 7.5 s from navigation,
 13.16 MB transferred (the wasm took ~2.4 s to download). Locally (no network) the size-profile
-bundle shows page 1 in ~2.3 s. A repeat visit uses the immutable cache. Stage numbers for the
-size-profile bundle are reported by the `editor · stage` job of `editor-e2e` on main.
+bundle shows page 1 in ~2.3 s. A repeat visit uses the immutable cache.
+
+Stage, size-profile bundle (`editor · stage` job of `editor-e2e` on main after #10, GitHub
+runner, first visit, nothing cached):
+
+| Browser | First page | Transferred |
+|---|---:|---:|
+| Chromium | 1.62 s | 10.81 MB |
+| Firefox (headed, Mesa software GL) | 2.43 s | 10.81 MB |
+| WebKit | 2.39 s | 10.82 MB |
+
+Chromium is inside 2 s from a datacenter link; Firefox and WebKit are not, and a home
+connection adds the download time of ~10.8 MB. Risk PW-C keeps the remaining options.
 
 Build times: wasm release build 30m34s at `-j 2` on the factory box, ~10 min on GitHub's runner
 (release), ~15 min (`profile.web`); pdfcraft-cli v0.22.0 cold release build 85m38s user time.
