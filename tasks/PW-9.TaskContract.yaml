@@ -1,0 +1,31 @@
+# Task PW-9 (milestone PW2), minted in Orunbase with this contract inline.
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: PW-9
+spec:
+  goal: The drive's data layer — migration 200_files_core (folders, documents, versions, uploads; every table org-scoped), a files repository in packages/db with version numbers from a unique constraint and soft delete, wire types in packages/contracts, and the one R2 key helper in packages/shared that takes the org id first.
+  affects:
+    - default/pagewell/contracts
+    - default/pagewell/contracts-tests
+    - default/pagewell/db
+    - default/pagewell/db-migrate
+    - default/pagewell/db-tests
+    - default/pagewell/editor-web
+    - default/pagewell/shared
+    - packages/db/**
+    - packages/shared/**
+    - packages/contracts/**
+    - tests/db/**
+    - tests/contracts/**
+    - specs/epics/pagewell-pdf-workspace/**
+    - ai/context/**
+    - tasks/**
+  deps: [PW-8]
+  doneWhen:
+    - migration 200_files_core applies cleanly and idempotently on a real SQLite engine and is in the manifest with its checksum
+    - the files repository round-trips folders, documents and versions on real SQLite; a stale baseVersion is a version_conflict; a duplicate version number is refused by the constraint
+    - "cross-org isolation tests: every repository read and write with another org's id finds nothing and changes nothing"
+    - the R2 key helper builds org/<orgId>/… keys, refuses a malformed org or document id, and is tested
+    - the db and contracts test suites are green in CI
+  gates: []

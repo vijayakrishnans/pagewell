@@ -183,5 +183,14 @@ export const manifest: MigrationManifest = {
       description:
         "Connection pointer on the inbound-delivery inbox (nullable connection_id + partial index) — lets the per-connection delivery log scope precisely; attributed by the IG2 cron drain",
     },
+    {
+      id: "200_files_core",
+      context: "files",
+      path: "200_files_core/up.sql",
+      checksum:
+        "912407c98648428d3d270b471835e6da7d42aa802fa52fb47b39b92221538a85",
+      description:
+        "Pagewell drive foundation (PW2) — org-scoped folders, documents, versions (numbers from the primary key) and in-flight multipart uploads, with a 30-day soft-delete trash",
+    },
   ],
 };

@@ -5,9 +5,11 @@
       "@saas/contracts": ["../../packages/contracts/src/index.ts"],
       "@saas/contracts/*": ["../../packages/contracts/src/*.ts"],
       "@saas/testing": ["../../packages/testing/src/index.ts"],
-      "@saas/testing/*": ["../../packages/testing/src/*.ts"]
+      "@saas/testing/*": ["../../packages/testing/src/*.ts"],
+      "@saas/shared": ["../../packages/shared/src/index.ts"],
+      "@saas/shared/*": ["../../packages/shared/src/*.ts"]
     }
   },
-  "include": ["src/**/*.ts", "../../packages/testing/src/**/*.ts", "../../packages/contracts/src/**/*.ts"],
+  "include": ["src/**/*.ts", "../../packages/testing/src/**/*.ts", "../../packages/contracts/src/**/*.ts", "../../packages/shared/src/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

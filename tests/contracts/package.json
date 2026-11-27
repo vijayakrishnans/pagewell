@@ -29,7 +29,9 @@
       "^@saas/contracts$": "<rootDir>/../../packages/contracts/src/index.ts",
       "^@saas/contracts/(.*)$": "<rootDir>/../../packages/contracts/src/$1.ts",
       "^@saas/testing$": "<rootDir>/../../packages/testing/src/index.ts",
-      "^@saas/testing/(.*)$": "<rootDir>/../../packages/testing/src/$1.ts"
+      "^@saas/testing/(.*)$": "<rootDir>/../../packages/testing/src/$1.ts",
+      "^@saas/shared$": "<rootDir>/../../packages/shared/src/index.ts",
+      "^@saas/shared/(.*)$": "<rootDir>/../../packages/shared/src/$1.ts"
     },
     "transform": {
       "^.+\\.ts$": ["ts-jest", { "useESM": true }]
