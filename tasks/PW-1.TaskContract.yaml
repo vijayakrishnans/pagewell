@@ -1,0 +1,17 @@
+# The spec's own contract (software-factory §2). The task PW-1 is minted in
+# Orunbase (task_create, adoptKey PW-1) under milestone PW0; this file is its
+# contract, not its declaration.
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: PW-1
+spec:
+  goal: The Pagewell epic doc set (README, design, implementation plan, risks, status, feature matrix, pdf-tools.json) is on main with PDFCRAFT_REF pinned.
+  affects:
+    - specs/epics/pagewell-pdf-workspace/**
+    - tasks/**
+  doneWhen:
+    - the doc set under specs/epics/pagewell-pdf-workspace/ is on main
+    - PDFCRAFT_REF (storytold/pdfcraft v0.22.0, ac140f809d554981a5276d748e6193fcf4d4bdfa) is recorded in the epic README and the ledger
+    - task_get PW-1 reads done
+  gates: []
