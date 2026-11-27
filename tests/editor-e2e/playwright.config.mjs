@@ -3,7 +3,7 @@
 // which must be built first (pnpm --filter @pagewell/editor-web build).
 import { defineConfig, devices } from "@playwright/test";
 
-const external = process.env.EDITOR_URL;
+const external = process.env.EDITOR_URL || undefined;
 const port = 8799;
 
 export default defineConfig({
