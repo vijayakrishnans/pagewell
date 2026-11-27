@@ -9,6 +9,8 @@ spec:
     - default/pagewell/files-worker
     - default/pagewell/files-worker-tests
     - default/pagewell/billing-worker
+    - default/pagewell/policy-worker
+    - apps/policy-worker/component.yaml
     - default/pagewell/contracts
     - default/pagewell/contracts-tests
     - default/pagewell/db
