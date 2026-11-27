@@ -255,7 +255,9 @@ mod tests {
 
     #[test]
     fn base64_matches_rfc_4648() {
-        for (raw, encoded) in [("", ""), ("f", "Zg=="), ("fo", "Zm8="), ("foo", "Zm9v"), ("foob", "Zm9vYg=="), ("fooba", "Zm9vYmE="), ("foobar", "Zm9vYmFy")] {
+        for (raw, encoded) in
+            [("", ""), ("f", "Zg=="), ("fo", "Zm8="), ("foo", "Zm9v"), ("foob", "Zm9vYg=="), ("fooba", "Zm9vYmE="), ("foobar", "Zm9vYmFy")]
+        {
             assert_eq!(base64(raw.as_bytes()), encoded);
         }
     }
@@ -272,4 +274,3 @@ mod tests {
         assert_eq!(data.len(), image["bytes"].as_u64().expect("bytes").div_ceil(3) as usize * 4);
     }
 }
-
