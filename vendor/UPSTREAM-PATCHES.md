@@ -13,13 +13,17 @@ storytold/pdfcraft. Bumping `PDFCRAFT_REF` is one task: `git subtree pull
 regenerate `specs/epics/pagewell-pdf-workspace/pdf-tools.json`, rebuild the
 container, and re-run the PW1 budgets and every end-to-end test.
 
-Verify the tree is unmodified:
+Verify the patches are the only change (v0.22.0's tree is
+`751f6c3d26c62010b1d724ec17d4de5c31e09b76`):
 
 ```bash
-git rev-parse HEAD:vendor/pdfcraft          # must equal the tag's tree when this table is empty
-# v0.22.0 tree: 751f6c3d26c62010b1d724ec17d4de5c31e09b76
+git diff --stat 8727aaa58 HEAD -- vendor/pdfcraft   # 8727aaa58 = the unmodified subtree (PW-3)
 ```
 
 | # | Files | Reason | Upstream PR | State |
 |---|---|---|---|---|
-| — | none | | | |
+| P1 | `crates/automation/src/lib.rs` (+ a test in `tests/it/automation.rs`) | `Automation::open_bytes(name, bytes, password) -> doc`: open a document from bytes the caller holds. `doc_open` takes a path, and a browser page running the wasm build has no file system, so the editor's in-browser tool executor (PW9) had no way to give the tools its document. 7 lines; no behaviour change for existing callers | pending (see below) | open |
+| P2 | `crates/ui-egui/src/brand.rs` (new) and one-line call sites in `app.rs`, `menus.rs`, `chrome.rs`, `home.rs`, `dialogs.rs`, `dialogs/palette.rs`, `hotbar.rs`, `lib.rs` | A host brand (`brand::set(HostBrand { name, about })`), set once by an embedding host: its name replaces "PdfCraft" in the window/page titles, the app menu and About; PdfCraft's community links (Discord, web page, GitHub, ArtCraft website) and the ArtCraft marks are left out of the menus, palette, tool bar, Home and About. The ArtCraft name and logos are trademarks that a product built on PdfCraft must not show. With no brand set nothing changes (unit tests) | pending (see below) | open |
+
+Upstream PRs are opened on storytold/pdfcraft from a fork once these land
+here; their links replace "pending".

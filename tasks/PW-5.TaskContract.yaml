@@ -1,0 +1,19 @@
+# Task PW-5 (milestone PW1), minted in Orunbase with this contract inline.
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: PW-5
+spec:
+  goal: "vendor/pdfcraft carries two minimal patches, each listed in vendor/UPSTREAM-PATCHES.md and offered upstream: Automation::open_bytes (a browser host has no file system) and a host brand in pdfcraft-ui-egui (name in titles, menus and About; community links and ArtCraft marks hidden when a host sets it), with upstream behaviour unchanged when no brand is set."
+  affects:
+    - vendor/pdfcraft/crates/automation/**
+    - vendor/pdfcraft/crates/ui-egui/**
+    - vendor/UPSTREAM-PATCHES.md
+    - specs/epics/pagewell-pdf-workspace/**
+    - tasks/**
+  doneWhen:
+    - cargo test -p pdfcraft-automation and -p pdfcraft-ui-egui pass in vendor/pdfcraft, including new tests for open_bytes and the brand
+    - with no brand set the editor's titles, menus and About read as upstream's
+    - vendor/UPSTREAM-PATCHES.md lists both patches with reasons and upstream PR links
+    - task_get PW-5 reads done
+  gates: []

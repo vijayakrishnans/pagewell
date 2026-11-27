@@ -20,9 +20,6 @@ use crate::{PdfCraftApp, RightPanel};
 
 pub(super) mod tab_context;
 
-/// The app's name in the menus the layouts write (About, Hide, Quit).
-pub(crate) const APP_NAME: &str = "PdfCraft";
-
 /// The top bar's width after the menus: the mode tabs, the search box and the buttons.
 const ROW_AFTER_MENUS: f32 = 720.0;
 /// The narrowest the menu bar gets: one "Menu" title.
@@ -273,7 +270,8 @@ fn translate(english: &'static str) -> String {
 
 /// The layouts' own labels (About, Quit, Window…) through the app's translations.
 pub(crate) fn layout_options() -> LayoutOptions<'static> {
-    LayoutOptions { label: &translate, ..LayoutOptions::new(APP_NAME) }
+    LayoutOptions { label: &translate, ..// The app's name in the menus the layouts write (About, Hide, Quit): PdfCraft, or a host brand's.
+    LayoutOptions::new(crate::brand::name()) }
 }
 
 impl PdfCraftApp {
@@ -341,7 +339,10 @@ impl PdfCraftApp {
         )];
         sign.extend(list(SIGN, &mut used));
         let window = list(WINDOW, &mut used);
-        let help = list(HELP, &mut used);
+        // A host brand leaves out PdfCraft's community links (they still count as placed).
+        let help_ids: Vec<&str> = HELP.iter().copied().filter(|id| !crate::brand::hides(id)).collect();
+        used.extend(HELP.iter().copied().filter(|id| crate::brand::hides(id)));
+        let help = list(&help_ids, &mut used);
         let mut view = vec![
             Node::submenu(tl!("Zoom"), list(ZOOM, &mut used)),
             Node::submenu(tl!("Rotate view"), list(&[ROTATE_CW, ROTATE_CCW], &mut used)),
