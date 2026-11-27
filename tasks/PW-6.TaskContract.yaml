@@ -1,0 +1,16 @@
+# Task PW-6 (milestone PW1), minted in Orunbase with this contract inline.
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: PW-6
+spec:
+  goal: vendor/UPSTREAM-PATCHES.md links each patch to its upstream issue and pull request on storytold/pdfcraft.
+  affects:
+    - vendor/UPSTREAM-PATCHES.md
+    - specs/epics/pagewell-pdf-workspace/**
+    - tasks/**
+  doneWhen:
+    - "P1 links storytold/pdfcraft#8536 and #8537"
+    - "P2 links storytold/pdfcraft#8538 and says why it is an issue, not a PR"
+    - task_get PW-6 reads done
+  gates: []
