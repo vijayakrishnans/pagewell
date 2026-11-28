@@ -295,6 +295,8 @@ export const NOTIFICATIONS_INTERNAL_ACTOR_VALUES = [
   "config-worker",
   "metering-worker",
   "notifications-worker",
+  // Pagewell's drive: tells a guest something was shared with them (PW3).
+  "files-worker",
   // The public edge forwards end-user preference reads/updates over the
   // service binding with the subject pinned to the resolved session actor.
   "api-edge",

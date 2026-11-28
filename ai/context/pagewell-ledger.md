@@ -84,7 +84,8 @@ PW0 mls_QNVAF2QE · PW1 mls_3F6D2YPV · PW2 mls_3QY0GJGR · PW3 mls_48B1ECZE · 
 | PW-15 | PW2 | #17 (a653a9c), #18 (1f4cb30) | done: files-worker live; stage e2e 44 + editor green |
 | PW-16 | PW3 | #19 (4a6969e) | done: sharing data + access rules |
 | PW-17 | PW3 | #20 (c9b527d) | done: files-worker sharing API |
-| PW-18 | PW3 | — | in progress: team profile (Solo off) |
+| PW-18 | PW3 | #21 (6034fc7) | done: team profile (Solo off) |
+| PW-19 | PW3 | — | in progress: edge, SDK, invitations |
 
 ## Measured budgets
 

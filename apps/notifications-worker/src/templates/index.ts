@@ -169,8 +169,46 @@ const renderInvitationAccepted: TemplateRenderer = (data, opts) => {
   return { subject, html, text };
 };
 
+/**
+ * Pagewell (PW3): something in a drive was shared with this address. The name of the folder or
+ * document is what the person who shared it chose to show; the link opens Pagewell, where the
+ * recipient signs in with this same address to see it (Shared with me).
+ */
+const renderFilesShared: TemplateRenderer = (data, opts) => {
+  const brand = opts.brandName ?? "";
+  const role = str(data, "role");
+  const kind = str(data, "resourceKind") === "folder" ? "folder" : "document";
+  const name = str(data, "resourceName");
+  const message = str(data, "message");
+  const openUrl = str(data, "openUrl");
+  const safeUrl = /^https:\/\/[^\s"'<>]+$/.test(openUrl) ? openUrl : "";
+  const what = name ? `the ${kind} "${name}"` : `a ${kind}`;
+  const subject = name ? `"${name}" was shared with you${brand ? ` on ${brand}` : ""}` : `A ${kind} was shared with you${brand ? ` on ${brand}` : ""}`;
+  const lead = `You can now ${role === "editor" ? "edit" : role === "commenter" ? "comment on" : "view"} ${what}.`;
+  const signIn = "Sign in with this email address to open it.";
+
+  const text = [lead, message ? `Message: ${message}` : "", safeUrl ? `Open it: ${safeUrl}` : "", signIn, "If you were not expecting this, you can ignore this email."]
+    .filter((line) => line.length > 0)
+    .join("\n\n");
+
+  const html = htmlShell(
+    "Shared with you",
+    [
+      `<p style="margin:0 0 16px;font-size:14px;">${escapeHtml(lead)}</p>`,
+      message ? `<p style="margin:0 0 16px;font-size:14px;border-left:3px solid #d0d0dc;padding-left:12px;">${escapeHtml(message)}</p>` : "",
+      safeUrl ? `<p style="margin:0 0 16px;"><a href="${escapeHtml(safeUrl)}" style="display:inline-block;background:#1a1a2e;color:#ffffff;padding:10px 16px;border-radius:6px;text-decoration:none;font-size:14px;">Open</a></p>` : "",
+      `<p style="margin:0 0 8px;font-size:14px;">${escapeHtml(signIn)}</p>`,
+      '<p style="margin:0;font-size:13px;color:#6b6b80;">If you were not expecting this, you can ignore this email.</p>',
+    ].join(""),
+    escapeHtml(brand ? `Sent by ${brand}` : "This is an automated email."),
+  );
+
+  return { subject, html, text };
+};
+
 const TEMPLATES: Record<string, TemplateRenderer> = {
   "auth.magic_link": renderMagicLink,
+  "files.shared": renderFilesShared,
   "invitation.created": renderInvitationCreated,
   "invitation.accepted": renderInvitationAccepted,
 };

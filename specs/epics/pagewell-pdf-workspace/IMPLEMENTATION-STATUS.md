@@ -8,7 +8,7 @@ the code departed from `design.md`.
 | PW0 — the spec | ✅ done 2026-11-27 (PW-1 doc set; PW-2 public, listing-ready repo) | #3, #4 |
 | PW1 — editor on the web | ✅ done 2026-11-28: vendor subtree (PW-3), upstream hooks P1/P2 (PW-5, PW-6), Rust workspace + bridge (PW-4), editor-web on stage (PW-7), three browsers, budgets, brand check (PW-8). Both budgets missed and recorded (risk PW-C) | #5, #6, #7, #8, #9, #10 |
 | PW2 — drive | ✅ done 2026-11-28: data layer (PW-9), files worker (PW-10), R2 buckets (PW-11), api-edge facade (PW-12), the drive in the console (PW-13), the editor opens and saves drive documents (PW-14), files worker live on stage and prod (PW-15). Verified on stage: 44 API checks and the real editor (see "PW2 on stage") | #11–#18 |
-| PW3 — orgs and sharing | in progress: sharing data and the access rules (PW-16), files-worker enforces sharing with links, guests, activity and audit (PW-17), team profile on (PW-18) | #19, #20 |
+| PW3 — orgs and sharing | in progress: sharing data and the access rules (PW-16), files-worker enforces sharing with links, guests, activity and audit (PW-17), team profile on (PW-18), sharing at the edge, in the SDK and by email (PW-19) | #19, #20, #21 |
 | PW4 — heavy jobs | | |
 | PW5 — review | | |
 | PW6 — e-sign | | |
@@ -170,8 +170,17 @@ created by the user, W3) is scoped to exactly those two names; the first plan na
 - **Audit event ids are UUIDv7 with a counter inside the millisecond**, so two events written
   in one request (a guest invited, then granted) keep their order in the activity list, which
   is ordered by time and then id.
-- **Invite emails are not sent yet**: a guest learns of a share from the person who shared it
-  until the notification template lands (PW-18).
+- **Invite emails (PW-19).** Sharing with a guest queues `files.shared` through
+  notifications-worker (files-worker is an allowed internal caller): what was shared, the role,
+  the sharer's message, and a button to the console's Shared with me. Once per share or role
+  change; never for members (they find it in Shared with me); `notify: false` skips it.
+- **At the edge (PW-19).** api-edge forwards the signed-in person's email (`x-actor-email`) to
+  files-worker, routes `/guests`, the sharing sub-routes and `/v1/me/shared`, and serves
+  `/v1/l/{token}[/content]` with no session in its own rate-limit family (`links`: 60 a minute
+  per client address), forwarding only the link password and client hints. CORS allows the
+  password header and exposes `x-pagewell-allow-download`. Reads use the edge's in-isolate
+  limiter, so a determined guesser spread across colos gets more than 60 tries a minute at a
+  link password: passwords are 8+ characters and PBKDF2-hashed (risk PW-O).
 
 ### D15 — The team profile is on (PW-18)
 The bootstrap shipped the baseline's M0/Solo profile (`SOLO_MODE=true` in api-edge,

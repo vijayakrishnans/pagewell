@@ -194,6 +194,33 @@ describe("grants", () => {
   });
 });
 
+describe("share invitations", () => {
+  it("emails a guest once per share or role change, never a member, and not when asked not to", async () => {
+    const w = setup();
+    const MEMBER = "usr_cccccccccccccccccccccccccccccccc";
+    w.directory.add(MEMBER, ORG_A, "viewer");
+    const d = await upload(w, "Invited.pdf");
+    await share(w, "documents", d, { email: GUEST_EMAIL, role: "viewer", message: "  For you  " });
+    expect(w.sent).toHaveLength(1);
+    expect(w.sent[0]!.headers["x-internal-actor"]).toBe("files-worker");
+    expect(w.sent[0]!.body).toMatchObject({
+      category: "product",
+      templateKey: "files.shared",
+      recipient: { channel: "email", address: GUEST_EMAIL },
+      templateData: { role: "viewer", resourceKind: "document", resourceName: "Invited.pdf", message: "For you", openUrl: "https://console.example.com/shared" },
+    });
+    await share(w, "documents", d, { email: GUEST_EMAIL, role: "viewer" }); // same role again: no news
+    expect(w.sent).toHaveLength(1);
+    await share(w, "documents", d, { email: GUEST_EMAIL, role: "editor" });
+    expect(w.sent).toHaveLength(2);
+    await share(w, "documents", d, { userId: MEMBER, role: "editor" });
+    await share(w, "documents", d, { email: "quiet@example.com", role: "viewer", notify: false });
+    expect(w.sent).toHaveLength(2);
+    // The invitation never carries a link token or anything secret.
+    expect(JSON.stringify(w.sent)).not.toMatch(/token|password/i);
+  });
+});
+
 describe("share links", () => {
   const linkPath = (token: string, rest = "") => `/v1/l/${token}${rest}`;
 

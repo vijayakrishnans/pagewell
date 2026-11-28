@@ -29,6 +29,8 @@ const ALLOWED_HEADERS = [
   "x-pagewell-base-version",
   "x-pagewell-page-count",
   "if-none-match",
+  // A share link's password (PW3).
+  "x-pagewell-link-password",
 ].join(", ");
 
 const EXPOSED_HEADERS = [
@@ -36,6 +38,8 @@ const EXPOSED_HEADERS = [
   // Pagewell's drive: the version a content response carries, and its ETag (sha256).
   "x-pagewell-version",
   "etag",
+  // Whether a share link offers a download (PW3).
+  "x-pagewell-allow-download",
 ].join(", ");
 
 // Pagewell's editor runs on its own origin and calls the drive API directly.

@@ -23,7 +23,9 @@
     "stage": {
       "workers_dev": false,
       "vars": {
-        "ENVIRONMENT": "stage"
+        "ENVIRONMENT": "stage",
+        // Where a share invitation's "Open" button goes (the console's Shared with me).
+        "CONSOLE_URL": "https://pagewell-web-console-next-stage.vijayakrishnan12994.workers.dev"
       },
       "triggers": { "crons": ["17 3 * * *"] },
       "d1_databases": [
@@ -42,13 +44,16 @@
       "services": [
         { "binding": "MEMBERSHIP_WORKER", "service": "pagewell-membership-worker-stage" },
         { "binding": "POLICY_WORKER", "service": "pagewell-policy-worker-stage" },
-        { "binding": "BILLING_WORKER", "service": "pagewell-billing-worker-stage" }
+        { "binding": "BILLING_WORKER", "service": "pagewell-billing-worker-stage" },
+        { "binding": "NOTIFICATIONS_WORKER", "service": "pagewell-notifications-worker-stage" }
       ]
     },
     "prod": {
       "workers_dev": false,
       "vars": {
-        "ENVIRONMENT": "prod"
+        "ENVIRONMENT": "prod",
+        // Where a share invitation's "Open" button goes (the console's Shared with me).
+        "CONSOLE_URL": "https://pagewell-web-console-next-prod.vijayakrishnan12994.workers.dev"
       },
       "triggers": { "crons": ["17 3 * * *"] },
       "d1_databases": [
@@ -67,7 +72,8 @@
       "services": [
         { "binding": "MEMBERSHIP_WORKER", "service": "pagewell-membership-worker-prod" },
         { "binding": "POLICY_WORKER", "service": "pagewell-policy-worker-prod" },
-        { "binding": "BILLING_WORKER", "service": "pagewell-billing-worker-prod" }
+        { "binding": "BILLING_WORKER", "service": "pagewell-billing-worker-prod" },
+        { "binding": "NOTIFICATIONS_WORKER", "service": "pagewell-notifications-worker-prod" }
       ]
     }
   }

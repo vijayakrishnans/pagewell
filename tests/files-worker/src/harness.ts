@@ -196,6 +196,8 @@ export function billing(limits: Record<string, number | null> = {}): Fetcher {
 }
 
 export interface World {
+  /** Share invitations files-worker asked notifications-worker to send. */
+  sent: Array<{ headers: Record<string, string>; body: Record<string, any> }>; // eslint-disable-line @typescript-eslint/no-explicit-any
   db: DatabaseSync;
   bucket: MemoryBucket;
   directory: Directory;
@@ -209,7 +211,15 @@ export function world(limits: Record<string, number | null> = {}): World {
   const db = migratedDatabase();
   const bucket = new MemoryBucket();
   const directory = new Directory();
+  const sent: World["sent"] = [];
   const env: Env = {
+    CONSOLE_URL: "https://console.example.com",
+    NOTIFICATIONS_WORKER: {
+      async fetch(_url: string, init?: RequestInit) {
+        sent.push({ headers: Object.fromEntries(new Headers(init?.headers).entries()), body: JSON.parse(String(init?.body ?? "{}")) });
+        return Response.json({ data: { notification: { id: "ntf_x" }, outcome: "queued" } }, { status: 202 });
+      },
+    } as unknown as Fetcher,
     ENVIRONMENT: "test",
     PLATFORM_DB: d1Over(db),
     FILES_BUCKET: bucket as unknown as R2Bucket,
@@ -221,6 +231,7 @@ export function world(limits: Record<string, number | null> = {}): World {
     BILLING_WORKER: billing(limits),
   };
   const w: World = {
+    sent,
     db,
     bucket,
     directory,

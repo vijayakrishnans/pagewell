@@ -5,5 +5,9 @@ export interface Env {
   MEMBERSHIP_WORKER?: Fetcher;
   POLICY_WORKER?: Fetcher;
   BILLING_WORKER?: Fetcher;
+  /** Share invitations to guests (PW3). Absent: nobody is emailed, the share still works. */
+  NOTIFICATIONS_WORKER?: Fetcher;
+  /** The console's origin, for the invitation's link to Shared with me. */
+  CONSOLE_URL?: string;
   ENVIRONMENT: string;
 }
