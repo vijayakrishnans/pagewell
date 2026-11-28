@@ -1,0 +1,78 @@
+apiVersion: sourceplane.io/v1
+kind: Component
+metadata:
+  name: review-worker
+  description: Pagewell's review — comment threads, review requests, and the DocRoom (presence, edit lease, live comments), acting through the drive
+spec:
+  type: cloudflare-worker-turbo
+  lifecycle: production
+  owner: pagewell
+  docs:
+    overview: docs/overview.md
+    pages:
+      - { path: docs/runbook.md, role: runbook, title: Runbook }
+  domain: pagewell-review
+  path: apps/review-worker
+  dependsOn:
+    - component: files-worker
+    - component: notifications-worker
+    - component: cloudflare-d1
+      mode: enforced
+      modeRules:
+        - mode: advisory
+          when:
+            triggerRef: github-pull-request
+  secretEnv:
+    WIRING_CLOUDFLARE_D1_STAGE: "secret://ws_52SNF622/pagewell/stage/WIRING_CLOUDFLARE_D1"
+    WIRING_CLOUDFLARE_D1_PROD: "secret://ws_52SNF622/pagewell/prod/WIRING_CLOUDFLARE_D1"
+
+  subscribe:
+    environments:
+      - name: dev
+        profile: verify
+      - name: stage
+        # Peer edges are runtime calls, not deploy order: every binding target
+        # exists before this deploys (policy-worker's pre-deploy places one,
+        # tooling/deploy/fleet-stubs.mjs), so nothing in this lane waits on a
+        # peer. The edges marked `mode: enforced` above still order.
+        dependencyMode: advisory
+        profile: verify
+        profileRules:
+          - profile: deploy
+            when:
+              triggerRef: github-push-main
+      - name: prod
+        dependencyMode: advisory
+        profile: verify
+        profileRules:
+          - profile: deploy
+            when:
+              triggerRef: github-push-main
+  parameters:
+    nodeVersion: "22"
+    pnpmVersion: "10.12.1"
+    workspaceDir: ../..
+    appDir: .
+    orgName: sourceplane
+    owner: sourceplane
+    repo: pagewell
+
+    turboFilter: "@saas/review-worker"
+    wranglerConfig: wrangler.jsonc
+    wranglerTemplate: wrangler.template.jsonc
+    wiringComponents: "cloudflare-d1"
+    wiringEnvs: "stage,prod"
+    wiringFixture: wiring.fixture.json
+    installCommand: pnpm install --frozen-lockfile
+    buildCommand: pnpm exec turbo run build --filter=@saas/review-worker
+    typecheckCommand: pnpm exec turbo run typecheck --filter=@saas/review-worker
+    dryRunCommand: pnpm exec wrangler deploy --dry-run --config wrangler.jsonc --env prod
+    deployCommand: pnpm exec wrangler deploy --config wrangler.jsonc --env prod
+    preDeployCommand: "echo 'No pre-deploy step configured.'"
+    migrationCommand: "echo 'Migrations run in the db-migrate component.'"
+    smokeCommand: "echo 'No public route; exercised through api-edge.'"
+  labels:
+    team: pagewell
+    layer: runtime
+    surface: review
+    runtime: cloudflare

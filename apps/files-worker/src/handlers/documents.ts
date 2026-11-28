@@ -307,6 +307,14 @@ export async function getThumbnail(ctx: Ctx, docId: Uuid, n: number): Promise<Re
   });
 }
 
+/** GET /documents/{doc}/versions/{n}/text: the text stored with that version (PW5 anchors), or 404. */
+export async function getText(ctx: Ctx, docId: Uuid, n: number): Promise<Response> {
+  if (!(await versionOf(ctx, docId, n))) return notFound(ctx.requestId);
+  const obj = await ctx.bucket.get(r2Key.text(ctx.orgId, docId, n));
+  if (!obj) return notFound(ctx.requestId);
+  return new Response(obj.body, { headers: { "content-type": "application/json", "cache-control": "private, max-age=31536000, immutable", "x-content-type-options": "nosniff" } });
+}
+
 /** PUT /documents/{doc}/versions/{n}/text: the text the browser extracted, for search and chat later. Never logged. */
 export async function putText(ctx: Ctx, request: Request, docId: Uuid, n: number): Promise<Response> {
   const type = (request.headers.get("content-type") ?? "").split(";")[0]!.trim();

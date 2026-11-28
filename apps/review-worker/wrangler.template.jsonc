@@ -1,0 +1,75 @@
+// Rendered to wrangler.jsonc by tooling/wire/render.mjs (BF6 deploy-time wiring).
+// Resource IDs are NEVER committed: @@wiring(<component>/<env>:<key>)@@ tokens are
+// resolved from the workspace's orun secrets at deploy time (wire-live) or from the
+// committed wiring.fixture.json for offline dry-runs (wire-fixture).
+//
+// review-worker: Pagewell's review (PW5). D1 for threads, comments and review requests; the
+// drive through FILES_WORKER (every access check, as the person); one DocRoom Durable Object
+// per document (presence, edit lease, live comments). No public route: api-edge fronts it.
+{
+  "name": "pagewell-review-worker",
+  "compatibility_date": "2025-05-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "src/index.ts",
+  "minify": false,
+  "vars": {
+    "ENVIRONMENT": "local"
+  },
+  "durable_objects": {
+    "bindings": [{ "name": "DOC_ROOM", "class_name": "DocRoom" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["DocRoom"] }],
+  "env": {
+    "dev": {
+      "vars": {
+        "ENVIRONMENT": "dev"
+      }
+    },
+    "stage": {
+      "workers_dev": false,
+      "vars": {
+        "ENVIRONMENT": "stage",
+        // Links in review emails open the document in the editor.
+        "EDITOR_URL": "https://pagewell-editor-web-stage.vijayakrishnan12994.workers.dev"
+      },
+      "triggers": { "crons": ["13 8 * * *"] },
+      "durable_objects": {
+        "bindings": [{ "name": "DOC_ROOM", "class_name": "DocRoom" }]
+      },
+      "d1_databases": [
+        {
+          "binding": "PLATFORM_DB",
+          "database_name": "pagewell-stage",
+          "database_id": "@@wiring(cloudflare-d1/stage:d1_database_id)@@"
+        }
+      ],
+      "services": [
+        { "binding": "FILES_WORKER", "service": "pagewell-files-worker-stage" },
+        { "binding": "NOTIFICATIONS_WORKER", "service": "pagewell-notifications-worker-stage" }
+      ]
+    },
+    "prod": {
+      "workers_dev": false,
+      "vars": {
+        "ENVIRONMENT": "prod",
+        // Links in review emails open the document in the editor.
+        "EDITOR_URL": "https://pagewell-editor-web-prod.vijayakrishnan12994.workers.dev"
+      },
+      "triggers": { "crons": ["13 8 * * *"] },
+      "durable_objects": {
+        "bindings": [{ "name": "DOC_ROOM", "class_name": "DocRoom" }]
+      },
+      "d1_databases": [
+        {
+          "binding": "PLATFORM_DB",
+          "database_name": "pagewell-prod",
+          "database_id": "@@wiring(cloudflare-d1/prod:d1_database_id)@@"
+        }
+      ],
+      "services": [
+        { "binding": "FILES_WORKER", "service": "pagewell-files-worker-prod" },
+        { "binding": "NOTIFICATIONS_WORKER", "service": "pagewell-notifications-worker-prod" }
+      ]
+    }
+  }
+}

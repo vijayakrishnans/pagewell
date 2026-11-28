@@ -9,6 +9,7 @@ import { isProjectRoute, handleProjectRoute } from "./project-facade";
 import { isFilesRoute, handleFilesRoute, isShareLinkRoute, handleShareLinkRoute } from "./files-facade";
 import { isJobsRoute, handleJobsRoute } from "./jobs-facade";
 import { applySecurityHeaders } from "./security-headers";
+import { isReviewRoute, handleReviewRoute, isRoomRoute, handleRoomRoute } from "./review-facade";
 import { isAuditRoute, handleAuditRoute } from "./audit-facade";
 import { isConfigRoute, handleConfigRoute } from "./config-facade";
 import { isWebhooksRoute, handleWebhooksRoute } from "./webhooks-facade";
@@ -36,6 +37,10 @@ export default {
 
     const url = new URL(request.url);
     const requestId = resolveRequestId(request);
+
+    // The DocRoom WebSocket (PW5): passed straight through. A 101 response must not be re-wrapped
+    // by the CORS or security-header steps, or the socket is lost.
+    if (isRoomRoute(url.pathname)) return handleRoomRoute(request, env, requestId, url.pathname);
 
     let response: Response;
 
@@ -74,6 +79,9 @@ export default {
     } else if (isShareLinkRoute(url.pathname)) {
       // Public share links (no session): the token is the key, checked in files-worker.
       response = await handleShareLinkRoute(request, env, requestId, url.pathname);
+    } else if (isReviewRoute(url.pathname)) {
+      // Before the files facade: review's document sub-routes share its /documents prefix.
+      response = await handleReviewRoute(request, env, requestId, url.pathname);
     } else if (isJobsRoute(url.pathname)) {
       response = await handleJobsRoute(request, env, requestId, url.pathname);
     } else if (isFilesRoute(url.pathname)) {

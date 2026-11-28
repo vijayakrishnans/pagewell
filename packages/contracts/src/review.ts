@@ -83,7 +83,16 @@ export type RoomEvent =
   | { type: "job"; jobId: string; status: string };
 
 /** Messages a client sends to the DocRoom. */
-export type RoomCommand = { type: "lease.take" } | { type: "lease.renew" } | { type: "lease.release" } | { type: "lease.break" } | { type: "ping" };
+export type RoomCommand = { type: "lease.take" } | { type: "lease.renew" } | { type: "lease.release" } | { type: "lease.break" } | { type: "version"; version: number } | { type: "ping" };
+
+/** POST …/room/ticket: a single-use ticket to open the room's WebSocket within a minute. */
+export interface RoomTicketResponse {
+  ticket: string;
+  expiresAt: string;
+  /** What the caller may do in the room. */
+  canEdit: boolean;
+  canBreak: boolean;
+}
 
 /** An edit lease lasts this long without a renewal. */
 export const LEASE_TTL_MS = 60_000;
