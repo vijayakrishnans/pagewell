@@ -8,7 +8,7 @@ the code departed from `design.md`.
 | PW0 — the spec | ✅ done 2026-11-27 (PW-1 doc set; PW-2 public, listing-ready repo) | #3, #4 |
 | PW1 — editor on the web | ✅ done 2026-11-28: vendor subtree (PW-3), upstream hooks P1/P2 (PW-5, PW-6), Rust workspace + bridge (PW-4), editor-web on stage (PW-7), three browsers, budgets, brand check (PW-8). Both budgets missed and recorded (risk PW-C) | #5, #6, #7, #8, #9, #10 |
 | PW2 — drive | ✅ done 2026-11-28: data layer (PW-9), files worker (PW-10), R2 buckets (PW-11), api-edge facade (PW-12), the drive in the console (PW-13), the editor opens and saves drive documents (PW-14), files worker live on stage and prod (PW-15). Verified on stage: 44 API checks and the real editor (see "PW2 on stage") | #11–#18 |
-| PW3 — orgs and sharing | in progress: sharing data and the access rules (PW-16) | |
+| PW3 — orgs and sharing | in progress: sharing data and the access rules (PW-16), files-worker enforces sharing with links, guests, activity and audit (PW-17) | #19 |
 | PW4 — heavy jobs | | |
 | PW5 — review | | |
 | PW6 — e-sign | | |
@@ -150,6 +150,28 @@ created by the user, W3) is scoped to exactly those two names; the first plan na
   manage. Passwords are PBKDF2-SHA256 with a per-link salt.
 - **`allow_download` is a viewer setting, not a control.** The bytes must reach the browser to be
   rendered; turning download off hides the button and nothing more.
+
+### D14 — files-worker's sharing as built (PW-17)
+- **Each route names what it needs.** Org-wide (`GET /folders`, recent, trash, quota, guests):
+  members only, decided as before. On a folder or document: the grants that reach it for the
+  caller (member id, or their verified email for guest grants) go to `policy-worker`'s
+  effective-permissions with the org role; one call per resource per request, cached. An
+  owner, admin or builder skips the grant read (no grant can widen an editor floor). Create,
+  upload and move also check the destination folder (or the root, members only).
+- **Uploads continue only for whoever started them**, and only while they may still write
+  where the upload goes.
+- **A guest's breadcrumb** starts at the highest folder shared with them; folders above it are
+  never named.
+- **Links** answer the linked document, or the linked folder's listing (`?folderId=` for a
+  folder inside it, checked against the subtree), and `/content?documentId=`. Responses to a
+  link holder blank the owner's user id. Opens are counted with day-salted hashes of the
+  address and user agent; one `link.opened` audit entry per open of the link, not per folder
+  browsed inside it.
+- **Audit event ids are UUIDv7 with a counter inside the millisecond**, so two events written
+  in one request (a guest invited, then granted) keep their order in the activity list, which
+  is ordered by time and then id.
+- **Invite emails are not sent yet**: a guest learns of a share from the person who shared it
+  until the notification template lands (PW-18).
 
 ## PW2 on stage (2026-11-28)
 - **API, `tooling/e2e/drive-stage.mjs`, 44 checks green.** Two throwaway users in their

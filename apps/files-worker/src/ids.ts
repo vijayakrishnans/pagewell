@@ -2,7 +2,7 @@ import { hexToUuid, uuidToHex, type Uuid } from "@saas/db/ids";
 
 // Public ids are <prefix>_<32 hex>; the database stores the bare UUID.
 
-export type IdKind = "org" | "fld" | "doc" | "upl" | "usr" | "sp";
+export type IdKind = "org" | "fld" | "doc" | "upl" | "usr" | "sp" | "grt" | "gst" | "lnk";
 
 export function toPublic(kind: IdKind, uuid: string): string {
   return `${kind}_${uuidToHex(uuid)}`;

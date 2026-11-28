@@ -1,6 +1,8 @@
-import type { FilesRepository } from "@saas/db/files";
+import type { FilesRepository, SharingRepository } from "@saas/db/files";
 import type { Uuid } from "@saas/db/ids";
 import { PAGE_COUNT_HEADER } from "@saas/contracts/files";
+import type { Access } from "./access.js";
+import type { Auditor } from "./audit.js";
 import type { Actor } from "./auth.js";
 import type { Env } from "./env.js";
 
@@ -12,6 +14,9 @@ export interface Ctx {
   orgId: Uuid;
   orgPublic: string;
   repo: FilesRepository;
+  sharing: SharingRepository;
+  access: Access;
+  audit: Auditor;
   bucket: R2Bucket;
   now: Date;
 }

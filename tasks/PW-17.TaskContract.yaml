@@ -1,0 +1,21 @@
+# Task PW-17 (milestone PW3), minted in Orunbase with this contract inline.
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: PW-17
+spec:
+  goal: files-worker decides every folder and document request from org role plus grants through policy, and serves grants, share links, guests, Shared with me, document activity and audit events for every drive change and share event.
+  affects:
+    - default/pagewell/files-worker
+    - default/pagewell/files-worker-tests
+    - apps/files-worker/**
+    - tests/files-worker/**
+    - specs/epics/pagewell-pdf-workspace/**
+    - ai/context/**
+    - tasks/**
+  deps: [PW-16]
+  doneWhen:
+    - The route-level permission matrix (org role x grant x action) passes; guests reach only what was shared
+    - A revoked or expired link is 404 on the next request; passwords and folder subtrees are enforced
+    - Every share event and drive change is in the audit log; a document's activity lists them
+  gates: []
