@@ -1,0 +1,38 @@
+# Task PW-24 (milestone PW4), minted in Orunbase with this contract inline.
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: PW-24
+spec:
+  goal: apps/pdf-jobs-worker starts, runs and reports heavy jobs acting as the person through files-worker, dispatched by a JobRunner Durable Object, with migration 220_jobs_core, the api-edge facade and the SDK client.
+  affects:
+    - default/pagewell/pdf-jobs-worker
+    - default/pagewell/pdf-jobs-worker-tests
+    - default/pagewell/api-edge
+    - default/pagewell/api-edge-tests
+    - default/pagewell/db-migrate
+    - default/pagewell/db
+    - default/pagewell/db-tests
+    - default/pagewell/contracts
+    - default/pagewell/shared
+    - default/pagewell/sdk
+    - default/pagewell/billing-worker
+    - default/pagewell/policy-worker
+    - apps/pdf-jobs-worker/**
+    - apps/api-edge/**
+    - apps/billing-worker/src/router.ts
+    - apps/policy-worker/component.yaml
+    - packages/**
+    - tests/pdf-jobs-worker/**
+    - tests/api-edge/**
+    - tests/db/**
+    - pnpm-lock.yaml
+    - specs/epics/pagewell-pdf-workspace/**
+    - ai/context/**
+    - tasks/**
+  deps: [PW-22]
+  doneWhen:
+    - Jobs tests pass against the real files-worker covering rights, versions, documents, files, retries, limits, conflicts and isolation
+    - pdf-jobs-worker deploys to stage and prod; POST /jobs answers 503 runner_unavailable until the Containers grant
+    - api-edge routes /jobs with the actor and email; the SDK has jobs.create, get, list, cancel, file and wait
+  gates: []

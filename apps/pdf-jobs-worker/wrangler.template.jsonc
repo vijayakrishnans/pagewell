@@ -1,0 +1,84 @@
+// Rendered to wrangler.jsonc by tooling/wire/render.mjs (BF6 deploy-time wiring).
+// Resource IDs are NEVER committed: @@wiring(<component>/<env>:<key>)@@ tokens are
+// resolved from the workspace's orun secrets at deploy time (wire-live) or from the
+// committed wiring.fixture.json for offline dry-runs (wire-fixture).
+//
+// pdf-jobs-worker: Pagewell's heavy jobs (PW4). D1 for job rows, R2 for result files, the
+// drive through FILES_WORKER, one JobRunner Durable Object per job. The pdf-runner container
+// (PDF_RUNNER) is not bound yet: deploying a Container needs the Containers grant (WAITING W4).
+// Until then POST /jobs answers 503 runner_unavailable. No public route: api-edge fronts it.
+{
+  "name": "pagewell-pdf-jobs-worker",
+  "compatibility_date": "2025-05-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "src/index.ts",
+  "minify": false,
+  "vars": {
+    "ENVIRONMENT": "local"
+  },
+  "durable_objects": {
+    "bindings": [{ "name": "JOB_RUNNER", "class_name": "JobRunner" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["JobRunner"] }],
+  "env": {
+    "dev": {
+      "vars": {
+        "ENVIRONMENT": "dev"
+      }
+    },
+    "stage": {
+      "workers_dev": false,
+      "vars": {
+        "ENVIRONMENT": "stage"
+      },
+      "triggers": { "crons": ["41 * * * *"] },
+      "durable_objects": {
+        "bindings": [{ "name": "JOB_RUNNER", "class_name": "JobRunner" }]
+      },
+      "d1_databases": [
+        {
+          "binding": "PLATFORM_DB",
+          "database_name": "pagewell-stage",
+          "database_id": "@@wiring(cloudflare-d1/stage:d1_database_id)@@"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "FILES_BUCKET",
+          "bucket_name": "@@wiring(cloudflare-r2/stage:r2_bucket_name)@@"
+        }
+      ],
+      "services": [
+        { "binding": "FILES_WORKER", "service": "pagewell-files-worker-stage" },
+        { "binding": "BILLING_WORKER", "service": "pagewell-billing-worker-stage" }
+      ]
+    },
+    "prod": {
+      "workers_dev": false,
+      "vars": {
+        "ENVIRONMENT": "prod"
+      },
+      "triggers": { "crons": ["41 * * * *"] },
+      "durable_objects": {
+        "bindings": [{ "name": "JOB_RUNNER", "class_name": "JobRunner" }]
+      },
+      "d1_databases": [
+        {
+          "binding": "PLATFORM_DB",
+          "database_name": "pagewell-prod",
+          "database_id": "@@wiring(cloudflare-d1/prod:d1_database_id)@@"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "FILES_BUCKET",
+          "bucket_name": "@@wiring(cloudflare-r2/prod:r2_bucket_name)@@"
+        }
+      ],
+      "services": [
+        { "binding": "FILES_WORKER", "service": "pagewell-files-worker-prod" },
+        { "binding": "BILLING_WORKER", "service": "pagewell-billing-worker-prod" }
+      ]
+    }
+  }
+}

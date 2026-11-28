@@ -7,6 +7,7 @@ import { isAuthRoute, handleAuthRoute } from "./auth-facade";
 import { isOrgRoute, handleOrgRoute } from "./org-facade";
 import { isProjectRoute, handleProjectRoute } from "./project-facade";
 import { isFilesRoute, handleFilesRoute, isShareLinkRoute, handleShareLinkRoute } from "./files-facade";
+import { isJobsRoute, handleJobsRoute } from "./jobs-facade";
 import { isAuditRoute, handleAuditRoute } from "./audit-facade";
 import { isConfigRoute, handleConfigRoute } from "./config-facade";
 import { isWebhooksRoute, handleWebhooksRoute } from "./webhooks-facade";
@@ -72,6 +73,8 @@ export default {
     } else if (isShareLinkRoute(url.pathname)) {
       // Public share links (no session): the token is the key, checked in files-worker.
       response = await handleShareLinkRoute(request, env, requestId, url.pathname);
+    } else if (isJobsRoute(url.pathname)) {
+      response = await handleJobsRoute(request, env, requestId, url.pathname);
     } else if (isFilesRoute(url.pathname)) {
       response = await handleFilesRoute(request, env, requestId, url.pathname);
     } else if (isProjectRoute(url.pathname)) {

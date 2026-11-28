@@ -201,5 +201,14 @@ export const manifest: MigrationManifest = {
       description:
         "Pagewell drive sharing (PW3) — member and guest grants on folders and documents (inherited down the folder tree at read time), share links stored as token hashes with optional PBKDF2 passwords and expiry, link opens (hashed), and guests matched by verified email",
     },
+    {
+      id: "220_jobs_core",
+      context: "jobs",
+      path: "220_jobs_core/up.sql",
+      checksum:
+        "8fb4ff648b5ddafea84a73ed9c15449e7d8d0b8249f2f21f9851c5aa52c93d3c",
+      description:
+        "Pagewell heavy jobs (PW4) — one org-scoped row per PdfCraft operation run in the pdf-runner container: inputs (documents at fixed versions), options, status, the versions, documents or day-long result files it made, bounded errors",
+    },
   ],
 };

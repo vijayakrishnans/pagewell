@@ -9,7 +9,7 @@ the code departed from `design.md`.
 | PW1 — editor on the web | ✅ done 2026-11-28: vendor subtree (PW-3), upstream hooks P1/P2 (PW-5, PW-6), Rust workspace + bridge (PW-4), editor-web on stage (PW-7), three browsers, budgets, brand check (PW-8). Both budgets missed and recorded (risk PW-C) | #5, #6, #7, #8, #9, #10 |
 | PW2 — drive | ✅ done 2026-11-28: data layer (PW-9), files worker (PW-10), R2 buckets (PW-11), api-edge facade (PW-12), the drive in the console (PW-13), the editor opens and saves drive documents (PW-14), files worker live on stage and prod (PW-15). Verified on stage: 44 API checks and the real editor (see "PW2 on stage") | #11–#18 |
 | PW3 — orgs and sharing | ✅ done 2026-11-28: sharing data and the access rules with the permission matrix (PW-16), files-worker enforces sharing with links, guests, activity and audit (PW-17), team profile on (PW-18), sharing at the edge, in the SDK and by email (PW-19), sharing in the console (PW-20), the share-link viewer and the stage run (PW-21). Verified on stage: 47 sharing checks and the real editor on a link (see "PW3 on stage") | #19–#25 |
-| PW4 — heavy jobs | in progress: the pdf-runner container, tested in CI (PW-23). Deploying it waits on the Containers grant (WAITING W4) | |
+| PW4 — heavy jobs | in progress: the runner image (PW-23, #27), pdf-jobs-worker, its data, the edge and the SDK (PW-24, #28, live on stage without a runner), tools in the console and Print in the editor (PW-25). Running jobs waits on the Containers grant (WAITING W4) | #28 |
 | PW5 — review | | |
 | PW6 — e-sign | | |
 | PW7 — remote MCP | | |
@@ -233,6 +233,40 @@ multi-org by the brief, so PW3 turns the team profile on everywhere. What change
   and models (2026-11-28).
 - **Not deployed (WAITING W4).** A Cloudflare Container needs the Containers permission, which no
   declared token template grants.
+### D18 — Jobs act through the drive; a Durable Object instead of a Queue (PW-24)
+- **A job acts as the person who asked.** `apps/pdf-jobs-worker` keeps the job rows (migration
+  `220_jobs_core`, with the actor's public id and verified email) and does every read and write
+  through `files-worker` with that person's actor headers. The drive's rights, quotas, version
+  conflicts and audit therefore apply to a job exactly as to the person: no second copy of the
+  access rules. Creating a job checks read on the inputs and write where the result goes; a
+  share removed before the job runs makes it fail with nothing written.
+- **Results.** OCR, compress, rotate, flatten, redact and sanitize save the next version on the
+  version the job read (a save in between: `version_conflict`, nothing written), or a new document
+  beside it; merge, split and extract make new documents; render, text and print keep files for a
+  day under `org/<orgId>/jobs/<jobId>/out/`.
+- **A Durable Object per job, not a Queue.** The deploy token cannot create Queues (W4); a
+  `JobRunner` Durable Object (SQLite-backed) runs the job from an alarm and retries an unreachable
+  runner three times, backing off. The hourly sweep fails jobs running over 20 minutes and removes
+  expired result files.
+- **Limits** from billing entitlements (`jobs.pages_per_job`, `jobs.concurrent`,
+  `jobs.cpu_seconds_per_job`; free tier 200 pages, 2 at a time, 120 CPU seconds), passed to the
+  runner; a plan's unlimited is capped at the runner's ceilings.
+- **Deploys without a runner.** `PDF_RUNNER` (the Container) is unbound until W4, so `POST /jobs`
+  answers `503 runner_unavailable`; the rest of the API is live. api-edge routes `/jobs` (own
+  rate-limit family) with the actor and email; the SDK has `client.jobs`.
+- **Not yet:** progress through `DocRoom` (polling instead), metering container seconds.
+
+### D19 — Tools and Print as built (PW-25)
+- **Console:** row menu → Run a tool… (documents): the twelve operations with what each asks
+  (pages as `1, 3-5`, degrees, every N pages, quality, documents to merge with from the same
+  folder) and, for the versioning ones, next version or new document. Started jobs sit in a tray
+  on the drive page, polled every 2 s until they end (toast, listing refreshed); a finished file
+  result (print, text, page images) opens in a new tab through an authenticated fetch.
+- **Editor:** Print (drive documents only) starts a `print` job on the version open in the editor,
+  polls it, and opens the print-ready PDF in a tab opened by the click. Local files keep the
+  browser's own print.
+- **Without a runner** both say so ("Heavy tools aren't available here yet", "Printing from the
+  server isn't available yet") instead of failing silently.
 
 ## PW3 on stage (2026-11-28)
 - **API, `tooling/e2e/sharing-stage.mjs`, 47 checks green** (twice: before and after the viewer

@@ -1,0 +1,26 @@
+# Task PW-25 (milestone PW4), minted in Orunbase with this contract inline.
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: PW-25
+spec:
+  goal: The console runs heavy tools on a document (Run a tool, a jobs tray with progress and Open for file results) and the editor's Print opens a server-rendered PDF in a new tab for drive documents.
+  affects:
+    - default/pagewell/web-console-next
+    - default/pagewell/web-console-next-tests
+    - default/pagewell/editor-web
+    - default/pagewell/editor-e2e
+    - apps/web-console-next/**
+    - apps/editor-web/**
+    - tests/web-console-next/**
+    - tests/editor-e2e/**
+    - tooling/e2e/**
+    - specs/epics/pagewell-pdf-workspace/**
+    - ai/context/**
+    - tasks/**
+  deps: [PW-24]
+  doneWhen:
+    - Run a tool builds valid jobs for all twelve operations and the tray follows them to the end; console tests pass
+    - Print in the editor starts a print job on the open version and opens the result in a new tab; editor specs pass
+    - Both say plainly when heavy jobs are not available yet
+  gates: []

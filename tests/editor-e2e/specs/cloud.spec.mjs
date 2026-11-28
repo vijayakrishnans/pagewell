@@ -212,3 +212,62 @@ test("a turned-off link says so", async ({ context, page }) => {
   await page.goto(`/l/${LINK}`);
   await expect(page.locator("#status")).toContainText("doesn't work any more", { timeout: 150_000 });
 });
+
+// ---- Print (PW4): a print-ready PDF made on the server by a print job, in a new tab ----
+
+async function fakeJobs(context, { available = true } = {}) {
+  const seen = { created: [], polls: 0, fileFetched: false };
+  await context.route(`${base}/jobs**`, async (route) => {
+    const req = route.request();
+    if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors(req) });
+    const url = new URL(req.url());
+    const job = (status) => ({ id: "job_" + "1".repeat(32), operation: "print", status, documentIds: [DOC], output: "files", result: status === "succeeded" ? { documents: [], files: [{ name: "result.pdf", type: "application/pdf", size: 1 }] } : null, error: null });
+    if (req.method() === "POST" && url.pathname.endsWith("/jobs")) {
+      if (!available) return route.fulfill(json(req, { error: { code: "runner_unavailable", message: "Heavy jobs are not available here yet", details: {} } }, 503));
+      seen.created.push(JSON.parse(req.postData() ?? "{}"));
+      return route.fulfill(json(req, { data: { job: job("queued") } }, 202));
+    }
+    if (url.pathname.endsWith("/files/result.pdf")) {
+      seen.fileFetched = true;
+      return route.fulfill({ status: 200, contentType: "application/pdf", headers: cors(req), body: fixturePdf(2) });
+    }
+    seen.polls++;
+    return route.fulfill(json(req, { data: { job: job(seen.polls >= 2 ? "succeeded" : "running") } }));
+  });
+  return seen;
+}
+
+test("Print makes a print-ready PDF of the open version on the server and opens it in a new tab", async ({ context, page }) => {
+  await fakeDrive(context);
+  const jobs = await fakeJobs(context);
+  await page.addInitScript(([apiBase, orgId, token]) => sessionStorage.setItem("pagewell.session", JSON.stringify({ token, apiBase, orgId })), [API, ORG, TOKEN]);
+  await page.goto(`/edit/${DOC}?org=${ORG}`);
+  await page.waitForFunction(() => window.pagewell?.cloud, null, { timeout: 150_000 });
+  await expect(page.locator("#print")).toBeVisible();
+  const popup = context.waitForEvent("page");
+  await page.locator("#print").click();
+  const tab = await popup;
+  // The PDF is fetched and the new tab is sent to it (a blob: URL of the PDF). How a browser then
+  // shows it is its own: a viewer, or a download in a headless one.
+  await expect.poll(() => jobs.fileFetched, { timeout: 30_000 }).toBe(true);
+  await expect.poll(() => page.evaluate(() => window.pagewell.lastPrint ?? ""), { timeout: 30_000 }).toMatch(/^blob:/);
+  expect(tab).toBeTruthy();
+  expect(jobs.created).toEqual([{ operation: "print", documentIds: [DOC], version: 1 }]);
+  expect(jobs.polls).toBeGreaterThanOrEqual(2);
+});
+
+test("Print says so when the server can't print yet", async ({ context, page }) => {
+  await fakeDrive(context);
+  await fakeJobs(context, { available: false });
+  await page.addInitScript(([apiBase, orgId, token]) => sessionStorage.setItem("pagewell.session", JSON.stringify({ token, apiBase, orgId })), [API, ORG, TOKEN]);
+  await page.goto(`/edit/${DOC}?org=${ORG}`);
+  await page.waitForFunction(() => window.pagewell?.cloud, null, { timeout: 150_000 });
+  await page.locator("#print").click();
+  await expect(page.locator("#status")).toContainText("Printing from the server isn't available yet");
+});
+
+test("Print is only offered for drive documents", async ({ page }) => {
+  await page.goto("/edit/local");
+  await page.waitForFunction(() => window.pagewell?.editor, null, { timeout: 150_000 });
+  await expect(page.locator("#print")).toBeHidden();
+});

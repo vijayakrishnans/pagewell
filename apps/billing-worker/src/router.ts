@@ -36,6 +36,7 @@ const ALLOWED_INTERNAL_CALLERS: ReadonlySet<string> = new Set([
   "projects-worker",
   // Pagewell's drive reads its quota entitlements (PW-10).
   "files-worker",
+  "pdf-jobs-worker",
   "membership-worker",
   "integrations-worker",
   // api-edge forwards verified-at-source-of-truth inbound provider webhooks

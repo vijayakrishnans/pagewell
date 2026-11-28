@@ -8,6 +8,7 @@
 //   org/<orgId>/doc/<docId>/thumb/<version>/<page>.webp
 //   org/<orgId>/doc/<docId>/text/<version>.json
 //   org/<orgId>/tmp/<uploadId>                          an in-flight multipart upload
+//   org/<orgId>/jobs/<jobId>/out/<name>                 a heavy job's result file, kept a day (PW4)
 //
 // Version bytes get a fresh id per write, not their version number: two
 // writers racing on the same baseVersion then never overwrite each other's
@@ -49,6 +50,11 @@ export const r2Key = {
   },
   upload(orgId: string, uploadId: string): string {
     return `${orgPrefix(orgId)}tmp/${uuid(uploadId, "upload id")}`;
+  },
+  /** A heavy job's result file (render, text, print), kept for a day. `name` is the runner's own: page-<n>.png, text.json, result.pdf, or a split part. */
+  jobFile(orgId: string, jobId: string, name: string): string {
+    if (typeof name !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(name) || name.includes("..")) throw new R2KeyError("job file name");
+    return `${orgPrefix(orgId)}jobs/${uuid(jobId, "job id")}/out/${name}`;
   },
   /** Every key under one document (for listing or purging its derived files). */
   docPrefix(orgId: string, docId: string): string {
