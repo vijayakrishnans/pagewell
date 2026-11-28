@@ -1,0 +1,24 @@
+# Task PW-34 (milestone PW6), minted in Orunbase with this contract inline.
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: PW-34
+spec:
+  goal: Signers sign in the browser at /s/<token> (email code, the document as sent, typed or drawn signature, consent, decline), usable at 390 px; senders request signatures from the drive and manage envelopes (status, evidence check, resend, void, open the signed PDF) in the console.
+  affects:
+    - default/pagewell/editor-web
+    - default/pagewell/web-console-next
+    - default/pagewell/web-console-next-tests
+    - apps/editor-web/**
+    - apps/web-console-next/**
+    - tests/editor-e2e/**
+    - tests/web-console-next/**
+    - specs/epics/pagewell-pdf-workspace/**
+    - ai/context/**
+    - tasks/**
+  deps: [PW-33]
+  doneWhen:
+    - Mocked editor tests — a code, a drawn signature, typed initials, consent, signed; spent link; not your turn; decline
+    - On stage, two signers sign in the real signing page (one at 390 px) and the envelope moves to completion with a verifying evidence chain
+    - The console's helpers are tested; Request signatures and Envelopes ship
+  gates: []

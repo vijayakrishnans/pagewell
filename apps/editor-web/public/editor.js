@@ -6,6 +6,7 @@
 //   /edit/<doc_…>?org=<org_…>   a document in the drive (cloud.js): opened with the session the
 //                               console hands this tab, saved as the next version
 //   /l/<token>                  a share link (cloud.js), view only: nothing is saved anywhere
+//   /s/<token>                  a signing link (signing.js), view only: the signer fills their fields
 //
 // `window.pagewell` exposes the editor and the page's helpers to tests (Playwright drives the
 // bridge API through it).
@@ -36,7 +37,9 @@ function say(text, isError = false) {
 }
 
 const linkToken = location.pathname.match(/^\/l\/([A-Za-z0-9_-]{20,128})\/?$/)?.[1] ?? null;
-const docId = linkToken ? "link" : location.pathname.replace(/^\/edit\/?/, "").replace(/\/$/, "") || "local";
+// A signing link (PW6): the signer's page, view only.
+const signToken = location.pathname.match(/^\/s\/([A-Za-z0-9_-]{20,100})\/?$/)?.[1] ?? null;
+const docId = linkToken ? "link" : signToken ? "sign" : location.pathname.replace(/^\/edit\/?/, "").replace(/\/$/, "") || "local";
 
 // The editor draws with WebGL2. Without it eframe never starts, so say why instead of waiting.
 const probe = document.createElement("canvas").getContext("webgl2");
@@ -145,7 +148,13 @@ function leave(href) {
   location.assign(href);
 }
 
-if (linkToken) {
+if (signToken) {
+  viewOnly = true;
+  for (const el of [saveButton, undoButton, $("open-label")]) el.hidden = true;
+  $("open").disabled = true;
+  const { startSigning } = await import("/signing.js");
+  await startSigning({ token: signToken, say, openBytes });
+} else if (linkToken) {
   viewOnly = true;
   for (const el of [saveButton, undoButton, $("open-label")]) el.hidden = true;
   $("open").disabled = true;

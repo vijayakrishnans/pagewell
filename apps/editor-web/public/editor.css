@@ -48,3 +48,20 @@ dialog input[type="password"] { width: 100%; box-sizing: border-box; margin: 0 0
 .comment .who { font-size: 12px; color: var(--muted); display: block; }
 .thread .row { display: flex; gap: 6px; margin-top: 6px; }
 @media (max-width: 720px) { .work { flex-direction: column; } .side { width: auto; max-width: none; border-left: 0; border-top: 1px solid var(--line); max-height: 45vh; } }
+
+/* Signing page (PW6) */
+.sign-title { margin: 0; font-size: 16px; }
+.sign-message { margin: 0; white-space: pre-wrap; border-left: 3px solid var(--line); padding-left: 10px; }
+.sign-step { display: grid; gap: 8px; }
+.sign-step input[type="text"], .sign-step input[inputmode="numeric"], .sign-step textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--fg); font: inherit; }
+.sign-field { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; display: grid; gap: 6px; }
+.sign-field header { font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
+.sign-tabs { display: flex; gap: 6px; }
+.sign-tabs .button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+.sign-pad { width: 100%; height: 120px; border: 1px dashed var(--line); border-radius: 6px; background: #fff; touch-action: none; }
+.sign-typed { font: italic 26px/1.2 "Segoe Script", "Brush Script MT", cursive; padding: 4px 0; overflow-wrap: anywhere; }
+.sign-consent { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; }
+.sign-docs { display: flex; flex-wrap: wrap; gap: 6px; }
+.sign-done { font-size: 15px; }
+#sign:not([hidden]) { width: 360px; }
+@media (max-width: 720px) { #sign:not([hidden]) { width: auto; max-height: 60vh; } }

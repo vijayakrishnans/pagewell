@@ -34,3 +34,12 @@ threads, a form to comment on a page, replies, resolve and reopen, who else is h
 lease. It joins the document's room in review-worker over a WebSocket with a single-use ticket
 (`POST …/room/ticket`), reconnecting when it drops. The first person who may edit holds the lease;
 Save is off for the others until it is free. Comments are always rendered as text.
+
+## Signing page (PW6)
+
+`/s/<token>` is the signer's page (`public/signing.js`): no account, the link token is the key,
+checked by sign-worker. The signer asks for an emailed code and enters it, then reads each
+document exactly as sent (the editor, view only), fills their fields in the side panel (a typed
+or drawn signature or initials, text, checkboxes; the date is set by the server), ticks the
+consent box and signs, or declines with a reason. It works at phone width (the panel goes under
+the document). Everything shown is rendered as text.

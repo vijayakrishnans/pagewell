@@ -179,3 +179,74 @@ test("two people in one document: one holds the edit lease, comments arrive live
   await expect(two.page.locator("#lease")).toBeHidden();
   await two.context.close();
 });
+
+test("two signers sign in the real signing page (one on a phone-sized screen); the envelope moves to completion", async ({ browser }) => {
+  const owner = await signIn();
+  const A = `/v1/organizations/${owner.orgId}`;
+  let res = await call(owner.token, "POST", `${A}/documents?name=ToSign.pdf`, { body: fixturePdf(2), headers: { "content-type": "application/pdf", "x-pagewell-page-count": "2" } });
+  const doc = (await data(res)).document;
+  const run = Date.now().toString(36);
+  res = await call(owner.token, "POST", `${A}/envelopes`, {
+    json: {
+      title: "Generated live agreement",
+      documents: [{ documentId: doc.id }],
+      signers: [
+        { key: "a", name: "Ann Example", email: `pw-e2e-ann-${run}@example.com` },
+        { key: "b", name: "Ben Example", email: `pw-e2e-ben-${run}@example.com` },
+      ],
+      fields: [
+        { signer: "a", documentId: doc.id, page: 2, rect: [72, 600, 200, 40], kind: "signature" },
+        { signer: "a", documentId: doc.id, page: 2, rect: [72, 646, 120, 20], kind: "date" },
+        { signer: "b", documentId: doc.id, page: 2, rect: [340, 600, 200, 40], kind: "signature" },
+      ],
+    },
+  });
+  expect(res.status).toBe(201);
+  const env = (await data(res)).envelope;
+  const sent = await data(await call(owner.token, "POST", `${A}/envelopes/${env.id}/send`));
+  const tokens = sent.delivery.links.map((l) => l.url.split("/s/")[1]);
+  expect(tokens).toHaveLength(2);
+
+  async function signIn_(token, { phone, draw }) {
+    const context = await browser.newContext(phone ? { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true } : {});
+    const page = await context.newPage();
+    await page.goto(`/s/${token}`);
+    await expect(page.locator("#sign-title")).toHaveText("Generated live agreement", { timeout: 150_000 });
+    await page.getByRole("button", { name: "Email me a code" }).click();
+    await page.waitForFunction(() => window.pagewell?.signing?.debugCode, null, { timeout: 20_000 });
+    const code = await page.evaluate(() => window.pagewell.signing.debugCode);
+    await page.getByLabel("Six-digit code").fill(code);
+    await page.getByRole("button", { name: "Verify" }).click();
+    await expect(page.locator("#status")).toContainText("ToSign.pdf", { timeout: 60_000 });
+    if (phone) {
+      // Nothing scrolls sideways at phone width.
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+    }
+    if (draw) {
+      const field = page.locator("[data-field]").first();
+      await field.getByRole("button", { name: "Draw" }).click();
+      const pad = field.locator("canvas");
+      await pad.scrollIntoViewIfNeeded();
+      const box = await pad.boundingBox();
+      await page.mouse.move(box.x + 15, box.y + 50);
+      await page.mouse.down();
+      for (let i = 1; i <= 10; i++) await page.mouse.move(box.x + 15 + i * 18, box.y + 50 + (i % 2 ? -20 : 20));
+      await page.mouse.up();
+    }
+    await page.locator("#sign-consent").check();
+    await page.getByRole("button", { name: "Sign", exact: true }).click();
+    await expect(page.locator("#sign-body")).toContainText("You've signed", { timeout: 30_000 });
+    await context.close();
+  }
+  await signIn_(tokens[0], { phone: false, draw: false });
+  await signIn_(tokens[1], { phone: true, draw: true });
+
+  const after = (await data(await call(owner.token, "GET", `${A}/envelopes/${env.id}`))).envelope;
+  expect(["completing", "completed"]).toContain(after.status);
+  expect(after.signers.every((s) => s.status === "signed")).toBe(true);
+  const ev = await data(await call(owner.token, "GET", `${A}/envelopes/${env.id}/evidence`));
+  expect(ev.verdict.ok).toBe(true);
+  expect(ev.events.filter((e) => e.kind === "signer.signed")).toHaveLength(2);
+  const drawn = ev.events.find((e) => e.kind === "signer.signed" && e.payload.fields.some((f) => f.kind === "signature" && f.sha256));
+  expect(drawn).toBeTruthy();
+});

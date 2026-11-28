@@ -11,7 +11,7 @@ the code departed from `design.md`.
 | PW3 — orgs and sharing | ✅ done 2026-11-28: sharing data and the access rules with the permission matrix (PW-16), files-worker enforces sharing with links, guests, activity and audit (PW-17), team profile on (PW-18), sharing at the edge, in the SDK and by email (PW-19), sharing in the console (PW-20), the share-link viewer and the stage run (PW-21). Verified on stage: 47 sharing checks and the real editor on a link (see "PW3 on stage") | #19–#25 |
 | PW4 — heavy jobs | in progress: the runner image (PW-23, #27), pdf-jobs-worker, its data, the edge and the SDK (PW-24, #28, live on stage without a runner), tools in the console and Print in the editor (PW-25). Running jobs waits on the Containers grant (WAITING W4) | #28 |
 | PW5 — review | ✅ done 2026-11-28: review data and the anchor rule (PW-28), review-worker with the DocRoom (PW-29), the editor's panel, presence and lease (PW-30). Verified on stage: 30 review checks over real WebSockets and the two-browser editor test (see "PW5 on stage") | #33–#37 |
-| PW6 — e-sign | in progress: e-sign data and the evidence chain (PW-31), the runner's `sign_complete` (PW-32), sign-worker with the signing API (PW-33) | #38, #39 |
+| PW6 — e-sign | in progress: e-sign data and the evidence chain (PW-31), the runner's `sign_complete` (PW-32), sign-worker with the signing API (PW-33), the signing page and the console's envelopes (PW-34) | #38–#41 |
 | PW7 — remote MCP | | |
 | PW8 — chat with documents | | |
 | PW9 — edit by chat | | |
@@ -416,6 +416,20 @@ Every done-when of PW5, on the deployed stage:
 - **Verified with the real runner locally**: a two-signer envelope (one drawn signature) went
   through the real `sign_complete`; the PDF in the sender's drive validates in poppler's pdfsig
   ("Signature is Valid", "Total document signed") with its certificate page.
+
+### D26 — the signing page and the console's envelopes as built (PW-34)
+- **The signing page is the editor's `/s/<token>`** (the design's `sign.<domain>/s/:token`, on the
+  editor's origin for now): the document opens in the editor view-only, the signer's steps live
+  in the side panel: email code, their fields (typed in a script face or drawn on a pad; drawn
+  ones are sent as PNG), consent, sign or decline. At 390 px the panel sits under the document.
+- **Request signatures… on a document in the drive**: signers (name, email), parallel or in the
+  order listed, reminders every 3 days, and for each signer a page and a spot (bottom left,
+  bottom right, middle left, top right) with an optional date under the signature. Spots are
+  rectangles on a Letter page: **fields are not placed by drawing on the page yet** (the console
+  does not render pages; the editor's bridge reports no click position). One document per
+  request from the console; the API takes up to ten.
+- **Envelopes** (new nav entry): the sender's envelopes with status, per-signer progress and
+  times, the evidence chain's verdict, Resend, Void, and Open the signed PDF once completed.
 
 ## OWASP review of PW2–PW4 (PW-26, 2026-11-28)
 Asked for by the user for every build from now on; each PR states the areas it touches.

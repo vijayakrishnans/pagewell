@@ -19,6 +19,7 @@ import {
   Upload,
   Activity,
   Wrench,
+  FileSignature,
 } from "lucide-react";
 import type { FolderListingResponse, PublicDocument, PublicFolder, PublicVersion } from "@saas/contracts/files";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,7 @@ import { useOpenInEditor } from "./open-in-editor";
 import { ShareDialog } from "./share-dialog";
 import { ActivityDialog } from "./activity-dialog";
 import { JobsTray, RunToolDialog } from "./run-tool";
+import { RequestSignaturesDialog } from "./request-signatures";
 import type { PublicJob } from "@saas/contracts/jobs";
 
 type Item = { kind: "folder"; folder: PublicFolder } | { kind: "document"; doc: PublicDocument };
@@ -63,6 +65,7 @@ export function DriveBrowser({ orgId, orgSlug, folderId }: Props) {
   const [versionsOf, setVersionsOf] = React.useState<PublicDocument | null>(null);
   const [sharing, setSharing] = React.useState<Item | null>(null);
   const [activityOf, setActivityOf] = React.useState<PublicDocument | null>(null);
+  const [signingFor, setSigningFor] = React.useState<PublicDocument | null>(null);
   const [toolFor, setToolFor] = React.useState<PublicDocument | null>(null);
   const [jobs, setJobs] = React.useState<PublicJob[]>([]);
   const updateJob = React.useCallback((job: PublicJob) => setJobs((cur) => cur.map((j) => (j.id === job.id ? job : j))), []);
@@ -292,6 +295,10 @@ export function DriveBrowser({ orgId, orgSlug, folderId }: Props) {
                         <Wrench className="h-4 w-4 mr-2" />
                         Run a tool…
                       </DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => setSigningFor(item.doc)}>
+                        <FileSignature className="h-4 w-4 mr-2" />
+                        Request signatures…
+                      </DropdownMenuItem>
                       <DropdownMenuItem onSelect={() => setActivityOf(item.doc)}>
                         <Activity className="h-4 w-4 mr-2" />
                         Activity
@@ -400,6 +407,8 @@ export function DriveBrowser({ orgId, orgSlug, folderId }: Props) {
           onClose={() => setToolFor(null)}
         />
       )}
+
+      {signingFor && <RequestSignaturesDialog orgId={orgId} orgSlug={orgSlug} doc={signingFor} onClose={() => setSigningFor(null)} />}
 
       {activityOf && <ActivityDialog orgId={orgId} doc={activityOf} onClose={() => setActivityOf(null)} />}
 
