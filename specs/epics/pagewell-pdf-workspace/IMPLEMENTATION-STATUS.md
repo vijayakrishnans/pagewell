@@ -11,7 +11,7 @@ the code departed from `design.md`.
 | PW3 — orgs and sharing | ✅ done 2026-11-28: sharing data and the access rules with the permission matrix (PW-16), files-worker enforces sharing with links, guests, activity and audit (PW-17), team profile on (PW-18), sharing at the edge, in the SDK and by email (PW-19), sharing in the console (PW-20), the share-link viewer and the stage run (PW-21). Verified on stage: 47 sharing checks and the real editor on a link (see "PW3 on stage") | #19–#25 |
 | PW4 — heavy jobs | in progress: the runner image (PW-23, #27), pdf-jobs-worker, its data, the edge and the SDK (PW-24, #28, live on stage without a runner), tools in the console and Print in the editor (PW-25). Running jobs waits on the Containers grant (WAITING W4) | #28 |
 | PW5 — review | ✅ done 2026-11-28: review data and the anchor rule (PW-28), review-worker with the DocRoom (PW-29), the editor's panel, presence and lease (PW-30). Verified on stage: 30 review checks over real WebSockets and the two-browser editor test (see "PW5 on stage") | #33–#37 |
-| PW6 — e-sign | in progress: e-sign data and the evidence chain (PW-31) | |
+| PW6 — e-sign | in progress: e-sign data and the evidence chain (PW-31), the runner's `sign_complete` (PW-32) | #38 |
 | PW7 — remote MCP | | |
 | PW8 — chat with documents | | |
 | PW9 — edit by chat | | |
@@ -363,6 +363,29 @@ Every done-when of PW5, on the deployed stage:
 - **The migration splitter** (`D1ApiAdapter.splitStatements`, also what deploys use) now keeps a
   `CREATE TRIGGER … BEGIN … END` body whole; it split at every `;` before, which no earlier
   migration needed.
+
+### D24 — completion in the runner as built (PW-32)
+- **`sign_complete` is a runner operation**, as the design puts completion in the heavy-jobs
+  path: the envelope's documents combined in order, each value placed with the engine's Fill &
+  Sign (typed text and dates in Helvetica, typed signatures and initials in the script font, drawn
+  ones from PNG/JPEG images sent with the job, checks), everything flattened into page content, a
+  certificate page appended, then one invisible certification signature (no changes allowed)
+  with the platform's digital ID: **PAdES B-B, SHA-256** (`ETSI.CAdES.detached`). The script
+  reopens the signed file and lists its signature; the runner refuses to answer unless there is
+  exactly one, covering the whole file, unchanged since.
+- **The certificate page** names the envelope, title, completion time, each document with its
+  version, page count and the SHA-256 of the bytes as sent, each signer with email, time and IP,
+  the evidence log's head hash before completion, and the statement that this is a simple
+  electronic signature. The **hash after** (of the signed file) cannot be on the file it hashes; it
+  goes into the evidence log and the completion email instead (PW-33).
+- **The digital ID never comes from a request**: the container reads `SIGN_P12_B64` and
+  `SIGN_P12_PASSWORD` (Worker secrets, passed to the container), writes `sign.p12` into the job's
+  directory for that job only, and masks the password in any error. No ID: `503
+  signing_unavailable`. Text reaching the page is reduced to what the standard fonts draw.
+- **Validated two ways, locally and in CI**: pdfcraft-cli's `sign_list` (one signature, not
+  modified, certified) and poppler's `pdfsig` ("Signature is Valid", "Total document signed");
+  one changed byte reads "Digest Mismatch" in pdfsig and `invalid` in pdfcraft. The CI job makes a
+  throwaway self-signed test ID; the production ID is made when the runner is deployed (W4).
 
 ## OWASP review of PW2–PW4 (PW-26, 2026-11-28)
 Asked for by the user for every build from now on; each PR states the areas it touches.

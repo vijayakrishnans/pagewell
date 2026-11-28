@@ -10,6 +10,11 @@
 //       body: the outputs, back to back
 //   4xx/5xx {"error":{"code","message"}}
 //
+// sign_complete (PW6) also takes drawn-signature images after the PDFs ("images": their sizes)
+// and signs with the platform's digital ID, which only this container holds: SIGN_P12_B64 and
+// SIGN_P12_PASSWORD in its environment (Worker secrets), written into the job's directory for the
+// job and removed with it. Without them, sign_complete answers 503 signing_unavailable.
+//
 // Each job gets a fresh directory, removed afterwards. pdfcraft-cli runs with --root <jobdir>
 // under prlimit (address space and CPU seconds) and a wall-clock timeout. Logs carry the job's
 // operation, sizes and outcome, never a file's text.
@@ -108,6 +113,24 @@ function failedStep(report) {
   return report.find((s) => s.status === "error");
 }
 
+/** The platform's digital ID, from the container's environment; never logged. */
+function signingId() {
+  const b64 = process.env.SIGN_P12_B64;
+  const password = process.env.SIGN_P12_PASSWORD;
+  if (!b64 || !password) throw new JobError(503, "signing_unavailable", "this runner has no signing identity");
+  const p12 = Buffer.from(b64, "base64");
+  if (p12.length < 100) throw new JobError(503, "signing_unavailable", "this runner's signing identity is unreadable");
+  return { p12, password };
+}
+
+/** The signed file must carry exactly one PAdES signature covering the whole file, unchanged since. */
+function checkSealed(step) {
+  const list = step?.result?.[0];
+  const sig = list?.signatures?.[0];
+  const ok = list?.count === 1 && sig?.signed === true && sig?.modification === "none" && sig?.sub_filter === "ETSI.CAdES.detached" && sig?.status !== "invalid";
+  if (!ok) throw new JobError(500, "runner_failed", "the signed file did not check out");
+}
+
 async function handleRun(req, res) {
   const started = Date.now();
   let header;
@@ -120,10 +143,16 @@ async function handleRun(req, res) {
   if (!Array.isArray(sizes) || sizes.length < 1 || sizes.length > 50 || !sizes.every((s) => Number.isInteger(s) && s > 0)) {
     throw new JobError(400, "bad_request", "inputs: the byte size of each input, 1 to 50 of them");
   }
-  const total = sizes.reduce((a, b) => a + b, 0);
-  if (total > HARD.bodyBytes) throw new JobError(413, "too_large", "the inputs are too large");
   const operation = header.operation;
   if (!OPERATIONS.includes(operation)) throw new JobError(422, "invalid_operation", `operation: one of ${OPERATIONS.join(", ")}`);
+  const imageSizes = header.images ?? [];
+  if (!Array.isArray(imageSizes) || imageSizes.length > 20 || !imageSizes.every((s) => Number.isInteger(s) && s > 0 && s <= 4 * 1024 * 1024)) {
+    throw new JobError(400, "bad_request", "images: the byte size of each image, at most 20 of 4 MiB");
+  }
+  if (imageSizes.length && operation !== "sign_complete") throw new JobError(400, "bad_request", "only sign_complete takes images");
+  const signing = operation === "sign_complete" ? signingId() : null;
+  const total = sizes.reduce((a, b) => a + b, 0) + imageSizes.reduce((a, b) => a + b, 0);
+  if (total > HARD.bodyBytes) throw new JobError(413, "too_large", "the inputs are too large");
   const limits = limitsFrom(header.limits);
 
   const chunks = [];
@@ -147,6 +176,16 @@ async function handleRun(req, res) {
       if (bytes.subarray(0, 1024).indexOf("%PDF-") < 0) throw new JobError(415, "not_a_pdf", `input ${i + 1} is not a PDF`);
       await writeFile(join(jobdir, `in-${i}.pdf`), bytes);
     }
+    const imageNames = [];
+    for (let i = 0; i < imageSizes.length; i++) {
+      const bytes = body.subarray(at, at + imageSizes[i]);
+      at += imageSizes[i];
+      const ext = bytes[0] === 0x89 && bytes.subarray(1, 4).toString("latin1") === "PNG" ? "png" : bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff ? "jpg" : null;
+      if (!ext) throw new JobError(415, "not_an_image", `image ${i + 1} is not a PNG or JPEG`);
+      imageNames.push(`sig-${i}.${ext}`);
+      await writeFile(join(jobdir, `sig-${i}.${ext}`), bytes);
+    }
+    if (signing) await writeFile(join(jobdir, "sign.p12"), signing.p12, { mode: 0o600 });
 
     // First pass: open every input to count its pages, against the page limit.
     await writeFile(join(jobdir, "count.json"), JSON.stringify(sizes.map((_, i) => ({ tool: "doc_open", args: { path: `in-${i}.pdf` } }))));
@@ -159,7 +198,7 @@ async function handleRun(req, res) {
 
     let job;
     try {
-      job = plan(operation, header.options ?? {}, sizes.length, pageCounts);
+      job = plan(operation, header.options ?? {}, sizes.length, pageCounts, { images: imageNames.length, imageNames, signPassword: signing?.password });
     } catch (e) {
       if (e instanceof OptionError) throw new JobError(422, "invalid_options", e.message);
       throw e;
@@ -167,7 +206,12 @@ async function handleRun(req, res) {
     await writeFile(join(jobdir, "job.json"), JSON.stringify(job.steps));
     const ran = await runScript(jobdir, "job.json", limits);
     const failed = failedStep(ran.report);
-    if (failed) throw new JobError(422, "operation_failed", `${failed.tool}: ${String(failed.error).replaceAll(jobdir, ".").slice(0, 500)}`);
+    if (failed) {
+      let message = String(failed.error).replaceAll(jobdir, ".");
+      if (signing) message = message.replaceAll(signing.password, "***");
+      throw new JobError(422, "operation_failed", `${failed.tool}: ${message.slice(0, 500)}`);
+    }
+    if (operation === "sign_complete") checkSealed(ran.report[ran.report.length - 1]);
 
     const outputs = [];
     for (const o of job.outputs) {

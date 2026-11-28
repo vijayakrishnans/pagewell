@@ -32,3 +32,10 @@ versions.
 | GET | `/jobs/{job}` | its creator, or a reader of its document |
 | POST | `/jobs/{job}/cancel` | its creator, while queued |
 | GET | `/jobs/{job}/files/{name}` | as `GET /jobs/{job}`, for a day |
+
+## E-sign completion (PW6)
+
+The runner's `sign_complete` operation seals an e-sign envelope: documents combined, values placed
+and flattened, a certificate page, and a PAdES B-B certification signature with the platform's
+digital ID, which only the container holds (`SIGN_P12_B64`, `SIGN_P12_PASSWORD`). sign-worker asks
+for it when the last signer signs; it is not a job people start themselves.

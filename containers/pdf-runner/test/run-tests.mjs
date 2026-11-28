@@ -9,7 +9,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { mkdtempSync, writeFileSync, existsSync, readdirSync, rmSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { formPdf, redactPdf, textPdf } from "./fixtures.mjs";
+import { completionOptions, formPdf, redactPdf, signaturePng, textPdf } from "./fixtures.mjs";
 
 const URL_ = process.env.RUNNER_URL || "http://127.0.0.1:8080";
 const CLI = process.env.PDFCRAFT_CLI || "/usr/local/bin/pdfcraft-cli";
@@ -30,11 +30,11 @@ function assert(ok, message) {
   if (!ok) throw new Error(message);
 }
 
-async function run(operation, inputs, options = {}, limits) {
+async function run(operation, inputs, options = {}, limits, images = []) {
   const res = await fetch(`${URL_}/run`, {
     method: "POST",
-    headers: { "x-pagewell-run": JSON.stringify({ operation, options, inputs: inputs.map((b) => b.length), ...(limits ? { limits } : {}) }) },
-    body: Buffer.concat(inputs),
+    headers: { "x-pagewell-run": JSON.stringify({ operation, options, inputs: inputs.map((b) => b.length), ...(images.length ? { images: images.map((b) => b.length) } : {}), ...(limits ? { limits } : {}) }) },
+    body: Buffer.concat([...inputs, ...images]),
   });
   if (!res.ok) return { status: res.status, error: (await res.json()).error, outputs: [] };
   const manifest = JSON.parse(res.headers.get("x-pagewell-outputs"));
@@ -75,7 +75,7 @@ const two = textPdf(2, "beta");
 
 await test("health lists every operation", async () => {
   const h = await (await fetch(`${URL_}/health`)).json();
-  assert(h.ok && h.operations.length === 12, JSON.stringify(h));
+  assert(h.ok && h.operations.length === 13, JSON.stringify(h));
 });
 
 await test("merge: 3 + 2 pages make one valid 5-page PDF", async () => {
@@ -163,6 +163,63 @@ await test("ocr: forced OCR writes a valid PDF whose text holds the page's words
 });
 
 // ---- refusals and limits ----
+
+// ---- sign_complete (PW6) ----
+// Needs the runner started with a (test) signing ID: SIGN_P12_B64 / SIGN_P12_PASSWORD. The CI job
+// makes a throwaway one. SIGNED_OUT, when set, keeps a copy of the signed file (and a tampered
+// one) for poppler's pdfsig on the host.
+
+/** pdfcraft-cli's sign_list for a PDF on disk. */
+function signList(bytes) {
+  const root = mkdtempSync(join(scratch, "sig-"));
+  writeFileSync(join(root, "f.pdf"), bytes);
+  writeFileSync(join(root, "s.json"), JSON.stringify([{ tool: "doc_open", args: { path: "f.pdf" } }, { tool: "sign_list", args: { doc: 1 } }]));
+  const r = spawnSync(CLI, ["run", "--script", join(root, "s.json"), "--root", root, "--report"], { encoding: "utf8" });
+  const report = JSON.parse(r.stdout || "[]");
+  const steps = Array.isArray(report) ? report : report.steps ?? [];
+  return steps[1]?.result?.[0];
+}
+
+const signing = await run("sign_complete", [textPdf(2, "A"), textPdf(1, "B")], completionOptions(), undefined, [await signaturePng()]);
+if (signing.status === 503 && signing.error?.code === "signing_unavailable") {
+  console.log("- sign_complete: this runner has no signing ID (set SIGN_P12_B64 and SIGN_P12_PASSWORD); skipped");
+} else {
+  await test("sign_complete: two documents and six values make one PAdES-signed PDF with a certificate page", async () => {
+    assert(signing.status === 200, `${signing.status} ${JSON.stringify(signing.error)}`);
+    const [pdf, report] = signing.outputs;
+    assert(pdf.name === "result.pdf" && report.name === "signature.json", JSON.stringify(signing.outputs.map((o) => o.name)));
+    assert(qpdf(pdf.bytes) === 4, "expected 2 + 1 pages and the certificate page");
+    const sig = JSON.parse(report.bytes.toString("utf8")).signatures[0];
+    assert(sig.sub_filter === "ETSI.CAdES.detached" && sig.modification === "none" && sig.certify === 1 && sig.algorithm.includes("SHA-256"), JSON.stringify(sig));
+    const text = await textOf(pdf.bytes);
+    for (const want of ["Certificate of completion", "a".repeat(64), "Ben Example <ben@example.com>", "c".repeat(64), "Generated note", "2026-11-28"]) assert(text.includes(want), `missing: ${want}`);
+    if (process.env.SIGNED_OUT) writeFileSync(process.env.SIGNED_OUT, pdf.bytes);
+  });
+
+  await test("sign_complete: changing one byte of the signed file is detected", async () => {
+    const pdf = Buffer.from(signing.outputs[0].bytes);
+    const before = signList(pdf).signatures[0];
+    assert(before.modification === "none" && before.status !== "invalid", JSON.stringify(before));
+    // Inside the first signed range, well away from the signature itself: a byte of page content.
+    const at = pdf.indexOf("Generated page 1");
+    assert(at > 0, "no page text to change");
+    pdf[at] = "g".charCodeAt(0);
+    const after = signList(pdf).signatures[0];
+    assert(after.status === "invalid", `a changed file still checks out: ${JSON.stringify(after)}`);
+    if (process.env.SIGNED_OUT) writeFileSync(`${process.env.SIGNED_OUT}.tampered.pdf`, pdf);
+  });
+
+  await test("sign_complete refuses images for other operations, a field off the page, and an image that is not one", async () => {
+    let r = await run("rotate", [three], { degrees: 90 }, undefined, [await signaturePng()]);
+    assert(r.status === 400, `images on rotate: ${r.status}`);
+    const off = completionOptions();
+    off.fields[0].page = 9;
+    r = await run("sign_complete", [textPdf(2, "A"), textPdf(1, "B")], off, undefined, [await signaturePng()]);
+    assert(r.status === 422 && r.error.code === "invalid_options", JSON.stringify(r.error));
+    r = await run("sign_complete", [textPdf(2, "A"), textPdf(1, "B")], completionOptions(), undefined, [Buffer.from("not an image at all")]);
+    assert(r.status === 415, `bad image: ${r.status}`);
+  });
+}
 
 await test("refuses an unknown operation, bad options and a body that is not a PDF", async () => {
   assert((await run("delete_everything", [three])).status === 422, "unknown operation");

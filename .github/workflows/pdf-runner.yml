@@ -52,15 +52,39 @@ jobs:
       - name: Image tests (no network)
         run: |
           set -euo pipefail
-          docker run -d --name runner --network none --read-only --tmpfs /jobs:uid=999,mode=1777 --tmpfs /tmp --memory 3g --pids-limit 256 pagewell/pdf-runner:ci
+          # A throwaway signing ID for sign_complete (PW6), made with the image's own CLI; never kept.
+          SIGN_PW="$(openssl rand -hex 24)"
+          echo "::add-mask::$SIGN_PW"
+          mkdir -m 777 sign-id
+          printf '[{"tool":"sign_id_create","args":{"name":"Pagewell CI Test Signing","organization":"Pagewell (test)","password":"%s","path":"test.p12","years":1}}]' "$SIGN_PW" > sign-id/s.json
+          docker run --rm --network none -v "$PWD/sign-id:/id" --entrypoint pdfcraft-cli pagewell/pdf-runner:ci run --script /id/s.json --root /id --report > /dev/null
+          SIGN_B64="$(base64 -w0 sign-id/test.p12)"
+          rm -rf sign-id
+          docker run -d --name runner --network none --read-only --tmpfs /jobs:uid=999,mode=1777 --tmpfs /tmp --memory 3g --pids-limit 256 \
+            -e SIGN_P12_B64="$SIGN_B64" -e SIGN_P12_PASSWORD="$SIGN_PW" pagewell/pdf-runner:ci
           for i in $(seq 1 30); do
             if docker exec runner node -e "fetch('http://127.0.0.1:8080/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"; then break; fi
             sleep 1
           done
-          docker exec -e RUNNER_URL=http://127.0.0.1:8080 runner node test/run-tests.mjs | tee runner-tests.txt
+          docker exec -e RUNNER_URL=http://127.0.0.1:8080 -e SIGNED_OUT=/tmp/signed.pdf runner node test/run-tests.mjs | tee runner-tests.txt
           echo '### pdf-runner image tests' >> "$GITHUB_STEP_SUMMARY"
           tail -n 1 runner-tests.txt >> "$GITHUB_STEP_SUMMARY"
           docker image inspect pagewell/pdf-runner:ci --format '{{.Size}}' | awk '{printf "Image size: %.0f MB\n", $1/1048576}' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: The signed PDF validates with poppler; the tampered one does not
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils > /dev/null
+          docker exec runner cat /tmp/signed.pdf > signed.pdf
+          docker exec runner cat /tmp/signed.pdf.tampered.pdf > tampered.pdf
+          pdfsig signed.pdf | tee pdfsig.txt
+          grep -q "Signature Type: ETSI.CAdES.detached" pdfsig.txt
+          grep -q "Total document signed" pdfsig.txt
+          grep -q "Signature Validation: Signature is Valid." pdfsig.txt
+          if pdfsig tampered.pdf | tee pdfsig-tampered.txt | grep -q "Signature is Valid."; then echo "tampered file validated"; exit 1; fi
+          grep -Eq "Digest Mismatch|Signature is Invalid" pdfsig-tampered.txt
+          echo '### sign_complete under poppler' >> "$GITHUB_STEP_SUMMARY"
+          grep -E "Signature Validation" pdfsig.txt pdfsig-tampered.txt >> "$GITHUB_STEP_SUMMARY"
 
       - name: Runner logs
         if: always()
