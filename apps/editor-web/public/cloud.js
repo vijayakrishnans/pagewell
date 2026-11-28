@@ -255,3 +255,138 @@ export async function openFromDrive({ docId, say, openBytes, automation, leave }
     },
   };
 }
+
+// ---- Share links (PW3) ----
+//
+// /l/<token> opens what a share link points at, read-only, with no account: the token is the
+// key and the drive API checks it on every request (a revoked link stops on the next one). A
+// link with a password asks for it; the password is kept for this tab only, never in the URL.
+// A folder link lists the folder so the viewer can pick a document.
+
+const LINK_PASSWORD_HEADER = "x-pagewell-link-password";
+const linkKey = (token) => `pagewell.link.${token.slice(0, 12)}`;
+
+function askPassword(wrong) {
+  const dialog = document.getElementById("link-password");
+  const input = document.getElementById("link-password-input");
+  document.getElementById("link-password-text").textContent = wrong
+    ? "That password didn't work. Try again."
+    : "Enter the password the person who shared it gave you.";
+  input.value = "";
+  return new Promise((resolve) => {
+    dialog.addEventListener("close", () => resolve(dialog.returnValue === "ok" && input.value ? input.value : null), { once: true });
+    dialog.showModal();
+    input.focus();
+  });
+}
+
+/** Ask which document of a folder link to open (folders inside it can be browsed). */
+function pickFromFolder(listing, browse) {
+  const dialog = document.getElementById("link-folder");
+  const list = document.getElementById("link-folder-list");
+  document.getElementById("link-folder-title").textContent = listing.folder?.name ?? "Shared folder";
+  document.getElementById("link-folder-path").textContent = listing.documents.length || listing.folders.length ? "Choose a document to open." : "This folder is empty.";
+  list.replaceChildren();
+  return new Promise((resolve) => {
+    const done = (value) => {
+      dialog.removeEventListener("close", onClose);
+      if (dialog.open) dialog.close();
+      resolve(value);
+    };
+    const onClose = () => resolve(null);
+    const row = (label, onClick) => {
+      const li = document.createElement("li");
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = label;
+      b.addEventListener("click", onClick);
+      li.append(b);
+      list.append(li);
+    };
+    for (const f of listing.folders) row(`📁 ${f.name}`, () => done(browse(f.id)));
+    for (const d of listing.documents) row(d.name, () => done({ document: d }));
+    dialog.addEventListener("close", onClose, { once: true });
+    if (!dialog.open) dialog.showModal();
+  });
+}
+
+/**
+ * Open the share link this page names. Resolves to `{ allowDownload, name }` once a document is
+ * open, or null (after saying why).
+ */
+export async function openFromLink({ token, say, openBytes }) {
+  if (!API) {
+    say("This viewer isn't connected to a drive.", true);
+    return null;
+  }
+  let password = null;
+  try {
+    password = sessionStorage.getItem(linkKey(token));
+  } catch {
+    /* no storage: ask */
+  }
+  const base = `${API}/v1/l/${encodeURIComponent(token)}`;
+  const get = (path) => fetch(base + path, { headers: password ? { [LINK_PASSWORD_HEADER]: password } : {} });
+
+  say("Opening the shared link…");
+  let res = await get("");
+  for (let attempt = 0; res.status === 401 && attempt < 5; attempt++) {
+    password = await askPassword(attempt > 0 || password !== null);
+    if (password === null) {
+      say("This link needs its password.", true);
+      return null;
+    }
+    res = await get("");
+  }
+  if (res.status === 404) {
+    say("This link doesn't work any more. It may have been turned off or expired.", true);
+    return null;
+  }
+  if (!res.ok) {
+    say(res.status === 429 ? "Too many tries. Wait a minute and try again." : `Couldn't open the link (${res.status}).`, true);
+    return null;
+  }
+  try {
+    if (password) sessionStorage.setItem(linkKey(token), password);
+  } catch {
+    /* keep it in memory only */
+  }
+
+  let opened = (await res.json()).data;
+  let doc = opened.document;
+  if (!doc) {
+    const browse = async (folderId) => {
+      const r = await get(`?folderId=${encodeURIComponent(folderId)}`);
+      return r.ok ? { listing: (await r.json()).data } : { listing: null };
+    };
+    let listing = opened;
+    for (;;) {
+      say("Choose a document from the shared folder.");
+      const choice = await pickFromFolder(listing, browse);
+      if (!choice) {
+        say("Nothing opened. Reload the page to choose again.");
+        return null;
+      }
+      const resolved = await choice;
+      if (resolved.document) {
+        doc = resolved.document;
+        break;
+      }
+      if (!resolved.listing) {
+        say("That folder isn't available.", true);
+        return null;
+      }
+      listing = resolved.listing;
+    }
+  }
+
+  const content = await get(`/content?documentId=${encodeURIComponent(doc.id)}`);
+  if (!content.ok) {
+    say(content.status === 404 ? "This document isn't shared any more." : `Couldn't open it (${content.status}).`, true);
+    return null;
+  }
+  const bytes = new Uint8Array(await content.arrayBuffer());
+  openBytes(bytes, doc.name);
+  say(`${doc.name} — view only`);
+  return { allowDownload: opened.link.allowDownload && content.headers.get("x-pagewell-allow-download") !== "0", name: doc.name, bytes };
+}

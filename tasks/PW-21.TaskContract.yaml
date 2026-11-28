@@ -1,0 +1,22 @@
+# Task PW-21 (milestone PW3), minted in Orunbase with this contract inline.
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: PW-21
+spec:
+  goal: The editor opens /l/<token> view only (password prompt, folder picker, download only when allowed), sharing is verified end to end on stage, and PW3 is closed in the plan, status, feature matrix and ledger.
+  affects:
+    - default/pagewell/editor-web
+    - default/pagewell/editor-e2e
+    - apps/editor-web/**
+    - tests/editor-e2e/**
+    - tooling/e2e/**
+    - specs/epics/pagewell-pdf-workspace/**
+    - ai/context/**
+    - tasks/**
+  deps: [PW-20]
+  doneWhen:
+    - Editor specs pass for password, folder and turned-off links; the real editor opens a stage link and a revoked one stops
+    - tooling/e2e/sharing-stage.mjs passes on stage, covering the matrix, guests, link revoke on next request, audit and isolation
+    - PW3 is marked done in the plan, status, feature matrix and ledger
+  gates: []

@@ -34,7 +34,11 @@ async function signIn() {
   expect(s.delivery.mode, "this environment must return login codes inline").toBe("local_debug");
   const done = await data(await call(null, "POST", "/v1/auth/login/complete", { json: { challengeId: s.challengeId, code: s.delivery.code } }));
   const orgs = (await data(await call(done.token, "GET", "/v1/organizations"))).organizations;
-  return { token: done.token, orgId: orgs[0].id };
+  if (orgs.length) return { token: done.token, orgId: orgs[0].id };
+  // Team profile (PW-18): a new user makes their first org.
+  const slug = `live-${Date.now().toString(36)}`;
+  const created = await data(await call(done.token, "POST", "/v1/organizations", { json: { name: "Live", slug } }));
+  return { token: done.token, orgId: created.organization.id };
 }
 
 test("the real editor opens a drive document, saves v2, survives a stale save by reloading, and v1 restores", async ({ context, page }) => {
@@ -99,4 +103,27 @@ test("the real editor opens a drive document, saves v2, survives a stale save by
   res = await call(token, "GET", `${D}/content`);
   expect(res.headers.get("x-pagewell-version")).toBe("4");
   expect(sha(new Uint8Array(await res.arrayBuffer()))).toBe(sha(v1));
+});
+
+test("a share link opens the real document in the real viewer, view only; turned off, it stops", async ({ page }) => {
+  const { token, orgId } = await signIn();
+  const A = `/v1/organizations/${orgId}`;
+  let res = await call(token, "POST", `${A}/documents?name=Linked.pdf`, { body: fixturePdf(3), headers: { "content-type": "application/pdf" } });
+  expect(res.status).toBe(201);
+  const doc = (await data(res)).document;
+  res = await call(token, "POST", `${A}/documents/${doc.id}/links`, { json: { role: "viewer", password: "generated pass", allowDownload: true } });
+  expect(res.status).toBe(201);
+  const { link, token: linkToken } = await data(res);
+
+  await page.goto(`/l/${linkToken}`);
+  await expect(page.locator("#link-password")).toBeVisible({ timeout: 150_000 });
+  await page.locator("#link-password-input").fill("generated pass");
+  await page.locator("#link-password").getByRole("button", { name: "Open" }).click();
+  await expect(page.locator("#status")).toContainText("Linked.pdf — view only");
+  await expect(page.locator("#save")).toBeHidden();
+  await expect(page.locator("#download")).toBeVisible();
+
+  expect((await call(token, "DELETE", `${A}/documents/${doc.id}/links/${link.id}`)).status).toBe(204);
+  await page.reload();
+  await expect(page.locator("#status")).toContainText("doesn't work any more", { timeout: 150_000 });
 });
