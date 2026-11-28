@@ -212,6 +212,27 @@ multi-org by the brief, so PW3 turns the team profile on everywhere. What change
 - **Activity** (row menu, documents): the audit entries for the document, newest first, paged.
 - **Guests** (Settings → Guests): list, with whether each has opened anything, and remove.
 
+### D17 — The PDF runner as built (PW-23)
+- **One route, no network.** `containers/pdf-runner` is `pdfcraft-cli` (built from
+  `vendor/pdfcraft`, without its MCP server), the two OCR models named in PdfCraft's
+  `ATTRIBUTION.toml` (downloaded and checked by SHA-256 at build), Tesseract (English) and qpdf,
+  behind a small Node wrapper. `POST /run` takes the inputs **in the request body** and returns
+  the outputs **in the response**, so the container needs no network at all, not even R2 (the
+  design had it reach R2 through the wrapper); the Worker in front reads and writes R2.
+- **Nothing from a request becomes a path.** Twelve fixed operations (OCR, compress, merge, split,
+  extract, rotate, flatten, redact, sanitize, render, text, print), each a literal
+  `pdfcraft-cli run --script` over files the wrapper names itself (`in-N.pdf`, `out/…`); options
+  are validated into numbers, booleans and enums. The CLI also runs with `--root <jobdir>`.
+- **Limits.** Pages are counted in a first pass and checked before the operation runs; CPU seconds
+  and address space are capped with `prlimit`, wall time with a kill; each job gets a fresh
+  directory, removed afterwards. Hard ceilings in the image; a request may ask for less.
+- **Tested in its image in CI** (`.github/workflows/pdf-runner.yml`): run with no network, a
+  read-only root, 3 GB and 256 processes; 19 checks, every PDF output through `qpdf --check` and
+  a page count, a script naming paths outside `--root` refused with nothing written, and the
+  page, memory and wall-clock limits each stopping a job. Also green locally against the same CLI
+  and models (2026-11-28).
+- **Not deployed (WAITING W4).** A Cloudflare Container needs the Containers permission, which no
+  declared token template grants.
 ### D18 — Jobs act through the drive; a Durable Object instead of a Queue (PW-24)
 - **A job acts as the person who asked.** `apps/pdf-jobs-worker` keeps the job rows (migration
   `220_jobs_core`, with the actor's public id and verified email) and does every read and write

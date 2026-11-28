@@ -10,7 +10,7 @@ Read this first on every resume. Then the notes file
 Phase A done: workspace `ws_52SNF622` in `openproduct-6ny98czp` (the user's
 decision, superseding `openproduct-sms84q22`), cirrus-baseline bootstrapped
 in ~6 min, stage and prod healthy. Epic EP-2 minted with PW0–PW11.
-PW0 ✅, PW1 ✅, PW2 ✅ (#11–#18), PW3 ✅ (2026-11-28: #19–#25; team profile on; sharing, guests, links, audit verified on stage). Next: PW4 (heavy jobs: needs Docker, W2).
+PW0 ✅, PW1 ✅, PW2 ✅ (#11–#18), PW3 ✅ (#19–#25, gaps register #26). PW4 (heavy jobs) built: runner image (#27), jobs worker live without a runner (#28), tools UI and Print (#29); running jobs on stage waits on W4 (Cloudflare Containers grant).
 
 ## Inputs actually used
 
@@ -88,7 +88,10 @@ PW0 mls_QNVAF2QE · PW1 mls_3F6D2YPV · PW2 mls_3QY0GJGR · PW3 mls_48B1ECZE · 
 | PW-19 | PW3 | #22 (f593d3d) | done: edge, SDK, invitations |
 | PW-20 | PW3 | #23 (1de97a8) | done: console sharing UI |
 | PW-21 | PW3 | #24 (f58b0af), #25 (6b17656) | done: link viewer; stage sharing 47 + live link green |
-| PW-22 | PW3 | — | gaps register (GAPS.md) |
+| PW-22 | PW3 | #26 (9e455a7) | done: gaps register (GAPS.md) |
+| PW-23 | PW4 | #27 | done on merge: pdf-runner image + CI (19 checks inside the image, no network); deploy waits on W4 |
+| PW-24 | PW4 | #28 (2ac6b65) | done: pdf-jobs-worker, migration 220, edge, SDK (live; 503 runner_unavailable until W4); jobs-stage.mjs 9 green |
+| PW-25 | PW4 | #29 (121ea28) | done: console Run a tool + jobs tray, editor Print |
 
 ## Measured budgets
 

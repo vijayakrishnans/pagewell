@@ -1,0 +1,18 @@
+# Task PW-23 (milestone PW4), minted in Orunbase with this contract inline.
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: PW-23
+spec:
+  goal: containers/pdf-runner builds pdfcraft-cli from vendor/pdfcraft with OCR models and Tesseract behind POST /run, and CI tests every operation inside the image with no network.
+  affects:
+    - containers/pdf-runner/**
+    - .github/workflows/pdf-runner.yml
+    - specs/epics/pagewell-pdf-workspace/**
+    - ai/context/**
+    - tasks/**
+  doneWhen:
+    - Each operation passes on generated fixtures in CI, its PDFs checked by qpdf --check and page counts
+    - A script that names paths outside --root fails, and nothing is written outside
+    - Page, CPU, memory and wall-clock limits stop a job that exceeds them
+  gates: []
