@@ -87,7 +87,8 @@ PW0 mls_QNVAF2QE · PW1 mls_3F6D2YPV · PW2 mls_3QY0GJGR · PW3 mls_48B1ECZE · 
 | PW-18 | PW3 | #21 (6034fc7) | done: team profile (Solo off) |
 | PW-19 | PW3 | #22 (f593d3d) | done: edge, SDK, invitations |
 | PW-20 | PW3 | #23 (1de97a8) | done: console sharing UI |
-| PW-21 | PW3 | #24 (f58b0af), close-out PR | done: link viewer; stage sharing 47 + live link green |
+| PW-21 | PW3 | #24 (f58b0af), #25 (6b17656) | done: link viewer; stage sharing 47 + live link green |
+| PW-22 | PW3 | — | gaps register (GAPS.md) |
 
 ## Measured budgets
 
