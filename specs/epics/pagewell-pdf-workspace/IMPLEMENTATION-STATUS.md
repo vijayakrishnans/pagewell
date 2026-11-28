@@ -11,7 +11,7 @@ the code departed from `design.md`.
 | PW3 — orgs and sharing | ✅ done 2026-11-28: sharing data and the access rules with the permission matrix (PW-16), files-worker enforces sharing with links, guests, activity and audit (PW-17), team profile on (PW-18), sharing at the edge, in the SDK and by email (PW-19), sharing in the console (PW-20), the share-link viewer and the stage run (PW-21). Verified on stage: 47 sharing checks and the real editor on a link (see "PW3 on stage") | #19–#25 |
 | PW4 — heavy jobs | in progress: the runner image (PW-23, #27), pdf-jobs-worker, its data, the edge and the SDK (PW-24, #28, live on stage without a runner), tools in the console and Print in the editor (PW-25). Running jobs waits on the Containers grant (WAITING W4) | #28 |
 | PW5 — review | ✅ done 2026-11-28: review data and the anchor rule (PW-28), review-worker with the DocRoom (PW-29), the editor's panel, presence and lease (PW-30). Verified on stage: 30 review checks over real WebSockets and the two-browser editor test (see "PW5 on stage") | #33–#37 |
-| PW6 — e-sign | in progress: e-sign data and the evidence chain (PW-31), the runner's `sign_complete` (PW-32), sign-worker with the signing API (PW-33), the signing page and the console's envelopes (PW-34) | #38–#41 |
+| PW6 — e-sign | built 2026-11-28, ⛔ completion on stage waits on W4: data and evidence chain (PW-31), the runner's `sign_complete` (PW-32), sign-worker (PW-33), signing page and console envelopes (PW-34). Two of three done-when met (see "PW6 status"); the third needs the runner on stage | #38–#42 |
 | PW7 — remote MCP | | |
 | PW8 — chat with documents | | |
 | PW9 — edit by chat | | |
@@ -430,6 +430,22 @@ Every done-when of PW5, on the deployed stage:
   request from the console; the API takes up to ten.
 - **Envelopes** (new nav entry): the sender's envelopes with status, per-signer progress and
   times, the evidence chain's verdict, Resend, Void, and Open the signed PDF once completed.
+
+### PW6 status (2026-11-28)
+- **Two signers complete an envelope in both orders, end to end on stage**: partly. On stage, both
+  orders run to `completing` through the API (`sign-stage.mjs`, 39 checks) and through the real
+  signing page in two browsers, one at 390 px (`cloud-live` › "two signers sign…"). The seal
+  itself runs in the pdf-runner, which is not on stage until **W4** (Workers Paid and a Containers
+  token). Locally, a whole envelope through the real runner completes (`tests/sign-worker` with
+  `RUNNER_URL`).
+- **The completed PDF's signature validates with pdfcraft-cli and poppler**: done, locally and in
+  CI on the runner image (`sign_list`: one certification signature, unmodified; `pdfsig`:
+  "Signature is Valid", "Total document signed").
+- **The evidence chain verifies, and a tampered PDF is detected**: done. `verifyChain` finds a
+  changed payload, a broken link and a gap (`tests/db`); the table refuses changes; stage's
+  evidence verifies; one changed byte in a sealed PDF reads "Digest Mismatch" (pdfsig) and
+  `invalid` (pdfcraft).
+- PW6 gets its ✅ when the first item passes on stage after W4.
 
 ## OWASP review of PW2–PW4 (PW-26, 2026-11-28)
 Asked for by the user for every build from now on; each PR states the areas it touches.
