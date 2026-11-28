@@ -10,7 +10,7 @@ Read this first on every resume. Then the notes file
 Phase A done: workspace `ws_52SNF622` in `openproduct-6ny98czp` (the user's
 decision, superseding `openproduct-sms84q22`), cirrus-baseline bootstrapped
 in ~6 min, stage and prod healthy. Epic EP-2 minted with PW0–PW11.
-PW0 ✅, PW1 ✅, PW2 ✅ (2026-11-28: #11–#17 and the close-out; buckets pagewell-files-stage/prod; stage e2e green). Next: PW3 (orgs and sharing).
+PW0 ✅, PW1 ✅, PW2 ✅ (#11–#18), PW3 ✅ (2026-11-28: #19–#25; team profile on; sharing, guests, links, audit verified on stage). Next: PW4 (heavy jobs: needs Docker, W2).
 
 ## Inputs actually used
 
@@ -87,7 +87,7 @@ PW0 mls_QNVAF2QE · PW1 mls_3F6D2YPV · PW2 mls_3QY0GJGR · PW3 mls_48B1ECZE · 
 | PW-18 | PW3 | #21 (6034fc7) | done: team profile (Solo off) |
 | PW-19 | PW3 | #22 (f593d3d) | done: edge, SDK, invitations |
 | PW-20 | PW3 | #23 (1de97a8) | done: console sharing UI |
-| PW-21 | PW3 | — | in progress: link viewer, stage e2e, close |
+| PW-21 | PW3 | #24 (f58b0af), close-out PR | done: link viewer; stage sharing 47 + live link green |
 
 ## Measured budgets
 

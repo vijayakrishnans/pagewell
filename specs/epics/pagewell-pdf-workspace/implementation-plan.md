@@ -71,7 +71,7 @@ types in `packages/contracts`; facades in `api-edge`.
 - storage, file-size and version quotas are enforced
 - cross-org isolation tests cover every new table, route and R2 prefix
 
-## PW3 — orgs and sharing
+## PW3 — orgs and sharing ✅
 
 Grants with folder inheritance, share links (expiry, password, download),
 guests with email verification, Shared with me, the Activity tab, audit
