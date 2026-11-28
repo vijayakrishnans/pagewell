@@ -1,0 +1,21 @@
+# Task PW-32 (milestone PW6), minted in Orunbase with this contract inline.
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: PW-32
+spec:
+  goal: pdf-runner gains sign_complete — an envelope's documents combined, each signer's values placed (typed, drawn, dates, text, checks) and flattened, a certificate page appended, and the file sealed with the platform digital ID (PAdES B-B, SHA-256, certified no changes), checked before it is returned.
+  affects:
+    - containers/pdf-runner/**
+    - .github/workflows/pdf-runner.yml
+    - apps/pdf-jobs-worker/docs/**
+    - default/pagewell/pdf-jobs-worker
+    - specs/epics/pagewell-pdf-workspace/**
+    - ai/context/**
+    - tasks/**
+  deps: [PW-31]
+  doneWhen:
+    - The completed PDF's signature validates with pdfcraft-cli and with poppler's pdfsig (CI, on the built image)
+    - A one-byte change to the signed PDF is detected by both
+    - Inputs are validated; no path or key comes from a request; images only for sign_complete
+  gates: []

@@ -62,6 +62,15 @@ another way, on purpose), **blocked** (waits on something outside the code), **c
 | Asking for a review from the console or editor | not done | The API came first | A "Request review" dialog | `client.review.requestReview` in the SDK and the API (D21) | PW6 or later |
 | Room route `/v1/rooms/{doc}` | differently | The edge's org-scoped routing | — | `/v1/organizations/{org}/documents/{doc}/room` with a ticket (D21) | Closed as built |
 
+## E-sign (PW6)
+
+| Gap | Status | Why | What is missing | What was done instead | Lands |
+|---|---|---|---|---|---|
+| Completion on stage | blocked | Runs in the pdf-runner container (W4: Workers Paid and a Containers token) | A completed, sealed PDF on stage | `sign_complete` built and validated locally and in CI on the image (D24) | When W4 clears |
+| A trusted signing certificate | not done | A CA-issued (or AATL) certificate costs money and an identity check | Viewers showing the platform signature as trusted, not "issuer unknown" | A self-signed Pagewell ID: integrity and no-change checks still hold; trust is a later purchase | Later |
+| The signed file's hash on the certificate page | differently | A file cannot contain its own hash | — | Hashes of each document as sent are on the page; the hash after goes into the evidence log and the email (D24) | Closed as built |
+| Timestamp (PAdES B-T) | not done | Needs a timestamp authority | A trusted time in the signature | Signing time is the server's clock, as the signature says | Later |
+
 ## Security (OWASP review, PW-26)
 
 | Gap | Status | Why | What is missing | What was done instead | Lands |

@@ -57,3 +57,72 @@ export function redactPdf() {
     "<< /Type /Annot /Subtype /Redact /Rect [60 705 400 745] /QuadPoints [60 745 400 745 60 705 400 705] /IC [0 0 0] /P 4 0 R >>",
   ]);
 }
+
+/** A small generated PNG (a dark stroke on transparency), standing in for a drawn signature. */
+export async function signaturePng(width = 120, height = 40) {
+  const { deflateSync } = await import("node:zlib");
+  const raw = Buffer.alloc((width * 4 + 1) * height);
+  for (let y = 0; y < height; y++) {
+    raw[y * (width * 4 + 1)] = 0;
+    for (let x = 0; x < width; x++) {
+      const on = Math.abs(y - (height / 2 + Math.sin(x / 8) * (height / 4))) < 2;
+      const o = y * (width * 4 + 1) + 1 + x * 4;
+      raw[o] = 20;
+      raw[o + 1] = 30;
+      raw[o + 2] = 90;
+      raw[o + 3] = on ? 255 : 0;
+    }
+  }
+  const crcTable = Array.from({ length: 256 }, (_, n) => {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    return c >>> 0;
+  });
+  const crc = (buf) => {
+    let c = 0xffffffff;
+    for (const b of buf) c = crcTable[(c ^ b) & 0xff] ^ (c >>> 8);
+    return (c ^ 0xffffffff) >>> 0;
+  };
+  const chunk = (type, data) => {
+    const len = Buffer.alloc(4);
+    len.writeUInt32BE(data.length);
+    const td = Buffer.concat([Buffer.from(type, "latin1"), data]);
+    const c = Buffer.alloc(4);
+    c.writeUInt32BE(crc(td));
+    return Buffer.concat([len, td, c]);
+  };
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(width, 0);
+  ihdr.writeUInt32BE(height, 4);
+  ihdr[8] = 8;
+  ihdr[9] = 6;
+  return Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), chunk("IHDR", ihdr), chunk("IDAT", deflateSync(raw)), chunk("IEND", Buffer.alloc(0))]);
+}
+
+/** The options of a generated envelope's completion (two documents, two signers). */
+export function completionOptions() {
+  return {
+    fields: [
+      { doc: 0, page: 1, kind: "signature", rect: [72, 600, 200, 40], text: "Ann Example" },
+      { doc: 0, page: 1, kind: "date", rect: [300, 610, 120, 20], text: "2026-11-28" },
+      { doc: 0, page: 2, kind: "checkbox", rect: [72, 500, 14, 14], checked: true },
+      { doc: 0, page: 2, kind: "text", rect: [100, 500, 200, 16], text: "Generated note" },
+      { doc: 1, page: 1, kind: "signature", rect: [72, 600, 200, 40], image: 0 },
+      { doc: 1, page: 1, kind: "initials", rect: [300, 600, 60, 30], text: "BE" },
+    ],
+    certificate: {
+      envelopeId: "env_generated",
+      title: "Generated agreement",
+      completedAt: "2026-11-28T10:05:00Z",
+      documents: [
+        { name: "Generated A.pdf", version: 3, sha256: "a".repeat(64) },
+        { name: "Generated B.pdf", version: 1, sha256: "b".repeat(64) },
+      ],
+      signers: [
+        { name: "Ann Example", email: "ann@example.com", signedAt: "2026-11-28T10:00:00Z", ip: "203.0.113.7" },
+        { name: "Ben Example", email: "ben@example.com", signedAt: "2026-11-28T10:04:00Z", ip: "198.51.100.4" },
+      ],
+      evidenceHead: "c".repeat(64),
+    },
+  };
+}
