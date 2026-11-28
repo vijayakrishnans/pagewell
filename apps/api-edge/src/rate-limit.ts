@@ -61,7 +61,8 @@ export type RouteFamily =
   | "files"
   | "links"
   | "jobs"
-  | "review";
+  | "review"
+  | "sign";
 
 interface BucketLimits {
   /** Bucket capacity (max tokens). */
@@ -147,6 +148,12 @@ const LIMITS: Record<RouteFamily, FamilyConfig> = {
   // Review (PW5): comments and threads; live updates arrive over the room's WebSocket, not polling.
   review: {
     identity: { limit: 120, windowSec: 60 },
+    org: { limit: 600, windowSec: 60 },
+  },
+  // E-sign (PW6): senders, and signers with no account (keyed by IP); codes are also capped per
+  // signer in sign-worker (one per 30 s, five wrong tries).
+  sign: {
+    identity: { limit: 60, windowSec: 60 },
     org: { limit: 600, windowSec: 60 },
   },
 };

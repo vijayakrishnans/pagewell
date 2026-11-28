@@ -299,6 +299,8 @@ export const NOTIFICATIONS_INTERNAL_ACTOR_VALUES = [
   "files-worker",
   // Pagewell's review: mentions, review requests, reminders (PW5).
   "review-worker",
+  // Pagewell's e-sign: signing links, email codes, reminders, completion (PW6).
+  "sign-worker",
   // The public edge forwards end-user preference reads/updates over the
   // service binding with the subject pinned to the resolved session actor.
   "api-edge",

@@ -237,5 +237,14 @@ export const manifest: MigrationManifest = {
       description:
         "Pagewell e-sign (PW6) — envelopes, their documents (versions and hashes frozen at send), signers with hashed single-use links and email codes, fields per signer, and the append-only hash-chained evidence log",
     },
+    {
+      id: "251_sign_sender",
+      context: "sign",
+      path: "251_sign_sender/up.sql",
+      checksum:
+        "19e192367d7617ac336fafba9484cc036a2030168033daa2809174f7ed3bfa49",
+      description:
+        "Pagewell e-sign (PW6) — the sender's email on an envelope, shown to signers and used to tell the sender of a decline or completion",
+    },
   ],
 };

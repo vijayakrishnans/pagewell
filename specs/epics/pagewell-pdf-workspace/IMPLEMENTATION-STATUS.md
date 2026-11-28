@@ -11,7 +11,7 @@ the code departed from `design.md`.
 | PW3 — orgs and sharing | ✅ done 2026-11-28: sharing data and the access rules with the permission matrix (PW-16), files-worker enforces sharing with links, guests, activity and audit (PW-17), team profile on (PW-18), sharing at the edge, in the SDK and by email (PW-19), sharing in the console (PW-20), the share-link viewer and the stage run (PW-21). Verified on stage: 47 sharing checks and the real editor on a link (see "PW3 on stage") | #19–#25 |
 | PW4 — heavy jobs | in progress: the runner image (PW-23, #27), pdf-jobs-worker, its data, the edge and the SDK (PW-24, #28, live on stage without a runner), tools in the console and Print in the editor (PW-25). Running jobs waits on the Containers grant (WAITING W4) | #28 |
 | PW5 — review | ✅ done 2026-11-28: review data and the anchor rule (PW-28), review-worker with the DocRoom (PW-29), the editor's panel, presence and lease (PW-30). Verified on stage: 30 review checks over real WebSockets and the two-browser editor test (see "PW5 on stage") | #33–#37 |
-| PW6 — e-sign | in progress: e-sign data and the evidence chain (PW-31), the runner's `sign_complete` (PW-32) | #38 |
+| PW6 — e-sign | in progress: e-sign data and the evidence chain (PW-31), the runner's `sign_complete` (PW-32), sign-worker with the signing API (PW-33) | #38, #39 |
 | PW7 — remote MCP | | |
 | PW8 — chat with documents | | |
 | PW9 — edit by chat | | |
@@ -386,6 +386,31 @@ Every done-when of PW5, on the deployed stage:
   modified, certified) and poppler's `pdfsig` ("Signature is Valid", "Total document signed");
   one changed byte reads "Digest Mismatch" in pdfsig and `invalid` in pdfcraft. The CI job makes a
   throwaway self-signed test ID; the production ID is made when the runner is deployed (W4).
+
+### D25 — sign-worker as built (PW-33)
+- **Sender's API** under `/v1/organizations/{org}/envelopes` (the design's `/v1/orgs/…`, in the
+  repo's own spelling): drafts, send, resend, void, evidence. Managing an envelope needs `share`
+  on every document in it, asked of the drive as the person; seeing one: that, or being its
+  sender. A list shows the caller's own envelopes.
+- **Signer's API** under `/v1/s/{token}` with no account. Verification is an emailed six-digit
+  code (the design's "email one-time code"); a signer sees only their own fields and the other
+  signers' names and status, and opens a document only after verifying, always at its frozen
+  version. The date field is set by the server to the day of signing. Explicit consent
+  (`consent: true`) is required and recorded.
+- **Completion goes through pdf-jobs-worker's internal route** (`POST /internal/sign-complete`, a
+  service binding only; api-edge never forwards it) to the runner's `sign_complete`, so sign-worker
+  never holds the digital ID. Hashes of the frozen versions are checked again before sealing. The
+  sealed PDF is uploaded to the sender's drive as a new document, and a 30-day view-and-download
+  share link goes to everyone with the sealed file's SHA-256 (the "hash after", D24).
+- **Waiting is honest**: without a runner the envelope stays `completing`; the hourly run
+  (`27 * * * *`) retries after five minutes, expires envelopes, and sends reminders with fresh links.
+- **The sender's email** is kept on the envelope (`251_sign_sender`) for "from" and for the decline
+  notice; signers' and sender's emails are six new templates (`sign.requested`, `.reminder`,
+  `.code`, `.declined`, `.voided`, `.completed`).
+- **Stage returns links and codes** in responses (`DEBUG_DELIVERY`, as login codes there); prod never.
+- **Verified with the real runner locally**: a two-signer envelope (one drawn signature) went
+  through the real `sign_complete`; the PDF in the sender's drive validates in poppler's pdfsig
+  ("Signature is Valid", "Total document signed") with its certificate page.
 
 ## OWASP review of PW2–PW4 (PW-26, 2026-11-28)
 Asked for by the user for every build from now on; each PR states the areas it touches.

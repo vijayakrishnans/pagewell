@@ -10,6 +10,7 @@ import { isFilesRoute, handleFilesRoute, isShareLinkRoute, handleShareLinkRoute 
 import { isJobsRoute, handleJobsRoute } from "./jobs-facade";
 import { applySecurityHeaders } from "./security-headers";
 import { isReviewRoute, handleReviewRoute, isRoomRoute, handleRoomRoute } from "./review-facade";
+import { isEnvelopeRoute, handleEnvelopeRoute, isSigningRoute, handleSigningRoute } from "./sign-facade";
 import { isAuditRoute, handleAuditRoute } from "./audit-facade";
 import { isConfigRoute, handleConfigRoute } from "./config-facade";
 import { isWebhooksRoute, handleWebhooksRoute } from "./webhooks-facade";
@@ -79,6 +80,11 @@ export default {
     } else if (isShareLinkRoute(url.pathname)) {
       // Public share links (no session): the token is the key, checked in files-worker.
       response = await handleShareLinkRoute(request, env, requestId, url.pathname);
+    } else if (isSigningRoute(url.pathname)) {
+      // The signer's page (no session): the link token is the key, checked in sign-worker.
+      response = await handleSigningRoute(request, env, requestId, url.pathname);
+    } else if (isEnvelopeRoute(url.pathname)) {
+      response = await handleEnvelopeRoute(request, env, requestId, url.pathname);
     } else if (isReviewRoute(url.pathname)) {
       // Before the files facade: review's document sub-routes share its /documents prefix.
       response = await handleReviewRoute(request, env, requestId, url.pathname);

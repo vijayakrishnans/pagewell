@@ -84,8 +84,8 @@ describe("migration 250_sign_core", () => {
 describe("drafts and sending", () => {
   it("a draft holds documents, signers (emails lower-cased) and fields; it changes only while a draft; sending freezes versions", async () => {
     const d = draft();
-    const env = ok(await repo.createDraft({ ...d, id: id(), orgId: ORG_A, createdBy: ALICE, now: T0 }));
-    expect(env).toMatchObject({ status: "draft", orderMode: "parallel", documents: [{ docId: DOC, version: null }], signers: [{ name: "Ann", email: "ann@example.com", status: "pending" }, { name: "Ben" }] });
+    const env = ok(await repo.createDraft({ ...d, id: id(), orgId: ORG_A, createdBy: ALICE, senderEmail: "alice@example.com", now: T0 }));
+    expect(env).toMatchObject({ status: "draft", senderEmail: "alice@example.com", orderMode: "parallel", documents: [{ docId: DOC, version: null }], signers: [{ name: "Ann", email: "ann@example.com", status: "pending" }, { name: "Ben" }] });
     expect(env.fields.map((f) => f.kind)).toEqual(["signature", "date", "signature"]);
 
     const changed = ok(await repo.updateDraft(ORG_A, asUuid(env.id), { ...draft(), title: "Renamed" }, at(1)));
