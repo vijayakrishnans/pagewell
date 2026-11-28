@@ -24,7 +24,8 @@
     "./review": "./src/review/index.ts",
     "./runner": "./src/runner/index.ts",
     "./d1": "./src/d1/index.ts",
-    "./json": "./src/json.ts"
+    "./json": "./src/json.ts",
+    "./sign": "./src/sign/index.ts"
   },
   "bin": {
     "db-migrate": "./dist/runner/cli.js"

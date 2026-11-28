@@ -27,7 +27,8 @@
     "./files": "./src/files.ts",
     "./sharing": "./src/sharing.ts",
     "./jobs": "./src/jobs.ts",
-    "./review": "./src/review.ts"
+    "./review": "./src/review.ts",
+    "./sign": "./src/sign.ts"
   },
   "scripts": {
     "build": "tsc --project tsconfig.build.json",

@@ -228,5 +228,14 @@ export const manifest: MigrationManifest = {
       description:
         "Pagewell review (PW5) — comment threads anchored on a page of a version (carried forward or marked outdated), their comments with mentions, review requests and their reviewers",
     },
+    {
+      id: "250_sign_core",
+      context: "sign",
+      path: "250_sign_core/up.sql",
+      checksum:
+        "6ee769696061ebb8f905785311fd05257c6c28b754679f7725fa4fb5a7e82e2d",
+      description:
+        "Pagewell e-sign (PW6) — envelopes, their documents (versions and hashes frozen at send), signers with hashed single-use links and email codes, fields per signer, and the append-only hash-chained evidence log",
+    },
   ],
 };

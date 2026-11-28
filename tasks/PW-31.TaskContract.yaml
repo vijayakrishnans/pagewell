@@ -1,0 +1,25 @@
+# Task PW-31 (milestone PW6), minted in Orunbase with this contract inline.
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: PW-31
+spec:
+  goal: Migration 250_sign_core, @saas/db/sign, @saas/contracts/sign and @saas/shared/evidence — envelopes with frozen versions, signers with hashed links and email codes, fields, sequential/parallel signing rules, and an append-only evidence log whose hash chain verifies and detects tampering.
+  affects:
+    - default/pagewell/db
+    - default/pagewell/db-tests
+    - default/pagewell/contracts
+    - default/pagewell/shared
+    - packages/db/**
+    - packages/contracts/**
+    - packages/shared/**
+    - tests/db/**
+    - pnpm-lock.yaml
+    - specs/epics/pagewell-pdf-workspace/**
+    - ai/context/**
+    - tasks/**
+  deps: []
+  doneWhen:
+    - tests/db sign suite passes on real SQLite — drafts, send, links, codes with a try limit, parallel and sequential signing, decline, void, expiry, reminders, completion, isolation
+    - The evidence chain verifies; a changed payload, a broken link and a gap are each detected; the table refuses UPDATE and DELETE
+  gates: []

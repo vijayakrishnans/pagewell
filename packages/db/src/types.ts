@@ -18,6 +18,7 @@ export const BOUNDED_CONTEXTS = [
   "files",
   "jobs",
   "review",
+  "sign",
 ] as const;
 
 export type BoundedContext = (typeof BOUNDED_CONTEXTS)[number];

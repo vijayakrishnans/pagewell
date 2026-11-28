@@ -11,7 +11,7 @@ the code departed from `design.md`.
 | PW3 — orgs and sharing | ✅ done 2026-11-28: sharing data and the access rules with the permission matrix (PW-16), files-worker enforces sharing with links, guests, activity and audit (PW-17), team profile on (PW-18), sharing at the edge, in the SDK and by email (PW-19), sharing in the console (PW-20), the share-link viewer and the stage run (PW-21). Verified on stage: 47 sharing checks and the real editor on a link (see "PW3 on stage") | #19–#25 |
 | PW4 — heavy jobs | in progress: the runner image (PW-23, #27), pdf-jobs-worker, its data, the edge and the SDK (PW-24, #28, live on stage without a runner), tools in the console and Print in the editor (PW-25). Running jobs waits on the Containers grant (WAITING W4) | #28 |
 | PW5 — review | ✅ done 2026-11-28: review data and the anchor rule (PW-28), review-worker with the DocRoom (PW-29), the editor's panel, presence and lease (PW-30). Verified on stage: 30 review checks over real WebSockets and the two-browser editor test (see "PW5 on stage") | #33–#37 |
-| PW6 — e-sign | | |
+| PW6 — e-sign | in progress: e-sign data and the evidence chain (PW-31) | |
 | PW7 — remote MCP | | |
 | PW8 — chat with documents | | |
 | PW9 — edit by chat | | |
@@ -342,6 +342,27 @@ Every done-when of PW5, on the deployed stage:
   takes it; a commenter cannot take it; the lease is freed on leave.
 - **Anchors on a changed page**: the same run saves version 2 with changed text: the quoted thread
   is carried to v2, the one on a page whose text changed is outdated and stays on its page.
+
+### D23 — e-sign data as built (PW-31)
+- **Migration `250_sign_core`** (context `sign`): `sign_envelopes`, `sign_envelope_documents`
+  (version, SHA-256 and page count frozen at send), `sign_signers`, `sign_fields`, `sign_events`.
+  Names follow the repo's `<context>_<table>` convention rather than the design's `sign.` schema.
+- **Links and email codes are stored only as SHA-256 hashes.** A link lives 14 days (a resend or
+  reminder issues a new one and kills the old), is spent when its signer signs or declines, and
+  every link of an envelope dies when it is declined, voided or expires. An email code lives 10
+  minutes and five wrong tries spend it.
+- **Signing rules in the repository**: only a verified signer whose turn it is (sequential: the
+  lowest routing order not yet signed), only their own fields, every required one; the field writes
+  and the signer update are one atomic batch, conditional on the signer still being able to sign.
+  One decline ends the envelope.
+- **The evidence log is append-only twice over**: triggers refuse `UPDATE` and `DELETE` on
+  `sign_events`, and each event's hash covers the previous one
+  (`@saas/shared/evidence`: SHA-256 over prev hash, seq, kind, time and the canonical JSON payload),
+  so `verifyChain` finds a changed payload, a broken link or a gap. Two writers of the same place
+  are refused by the primary key (the second retries).
+- **The migration splitter** (`D1ApiAdapter.splitStatements`, also what deploys use) now keeps a
+  `CREATE TRIGGER … BEGIN … END` body whole; it split at every `;` before, which no earlier
+  migration needed.
 
 ## OWASP review of PW2–PW4 (PW-26, 2026-11-28)
 Asked for by the user for every build from now on; each PR states the areas it touches.
