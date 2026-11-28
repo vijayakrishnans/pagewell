@@ -90,8 +90,10 @@ whose browser has no WebGL2 now get a message saying so instead of a page stuck 
 - **Uploads.** One request carries up to 95 MiB, streamed into R2 while it is hashed. Larger
   files use R2 multipart (10 MiB parts, 24 h to finish), and the completed object is checked
   against the sha256 the client sends.
-- **Stage deploy waits on the bucket.** `files-worker` verifies in CI but is subscribed
-  `verify`-only until the `cloudflare-r2` root creates `pagewell-files-<env>` (WAITING W3).
+- **The bucket (PW-11, PW-15).** `infra/terraform/cloudflare-r2` creates `pagewell-files-<env>`
+  with the brokered `r2-data` token (W3), scoped to exactly those two names, so the bucket
+  name drops the runner's `stg-`/`prod-` prefix that the other roots use. `files-worker`
+  binds it from the `WIRING_CLOUDFLARE_R2` secret and deploys on push to `main`.
 - **The edge (PW-12).** `api-edge` forwards the drive routes to `FILES_WORKER` with the actor
   headers, streaming bodies both ways; the drive has its own rate-limit family (300 per
   identity, 1,500 per org per minute: a multipart upload is a request per part). CORS admits
