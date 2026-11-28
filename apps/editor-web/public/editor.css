@@ -24,3 +24,9 @@ dialog h2 { margin: 0 0 8px; font-size: 16px; }
 dialog p { margin: 0 0 14px; color: var(--muted); }
 .dialog-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+dialog input[type="password"] { width: 100%; box-sizing: border-box; margin: 0 0 14px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--fg); font: inherit; }
+.link-list { list-style: none; margin: 0 0 14px; padding: 0; max-height: 50vh; overflow-y: auto; }
+.link-list li + li { border-top: 1px solid var(--line); }
+.link-list button { all: unset; box-sizing: border-box; display: block; width: 100%; padding: 8px 4px; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.link-list button:hover, .link-list button:focus-visible { background: var(--line); }

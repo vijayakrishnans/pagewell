@@ -31,6 +31,8 @@ export function peers(host: string, env: Pick<Env, "API_ORIGIN" | "CONSOLE_ORIGI
 // The bundle lives under /pkg/<sourceHash>/, so its files can be cached as immutable.
 const WASM = /^\/pkg\/[0-9a-f]{16,64}\/pagewell_web_bridge_bg\.wasm$/;
 const DOC_ID = /^\/edit\/([A-Za-z0-9_-]{1,64})\/?$/;
+// A share link opened read-only (PW3): the token is the key, checked by the drive API.
+const LINK = /^\/l\/([A-Za-z0-9_-]{20,128})\/?$/;
 
 // The editor runs as wasm and draws on a canvas; it loads nothing from other origins, and
 // talks only to its own origin and the drive API.
@@ -70,7 +72,7 @@ export default {
       return Response.json({ ok: true, service: "editor-web" });
     }
 
-    if (DOC_ID.test(path)) {
+    if (DOC_ID.test(path) || LINK.test(path)) {
       // `/editor`, not `/editor.html`: the assets' html handling redirects the latter.
       const page = await env.ASSETS.fetch(new URL("/editor", url));
       if (!page.ok) return page;

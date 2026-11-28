@@ -148,3 +148,67 @@ test("a session from anywhere but the console is ignored", async ({ context, pag
   await expect(editor.locator("#status")).toContainText("has no session", { timeout: 150_000 });
   expect(await editor.evaluate(() => sessionStorage.getItem("pagewell.session"))).toBeNull();
 });
+
+// ---- Share links (PW3): /l/<token>, view only, no account ----
+
+const LINK = "L".repeat(43);
+const linkBase = `${API}/v1/l/${LINK}`;
+
+/** A fake share link: a document (with an optional password) or a folder, or a dead link. */
+async function fakeLink(context, { kind = "document", password = null, allowDownload = true, dead = false } = {}) {
+  const seen = { passwords: [], urls: [] };
+  await context.route(`${linkBase}**`, async (route) => {
+    const req = route.request();
+    if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors(req) });
+    seen.urls.push(req.url());
+    seen.passwords.push(req.headers()["x-pagewell-link-password"] ?? null);
+    if (dead) return route.fulfill(json(req, { error: { code: "not_found", message: "Not found", details: {} } }, 404));
+    if (password && req.headers()["x-pagewell-link-password"] !== password) {
+      return route.fulfill(json(req, { error: { code: "link_password_required", message: "This link needs its password", details: {} } }, 401));
+    }
+    const url = new URL(req.url());
+    if (url.pathname.endsWith("/content")) {
+      return route.fulfill({ status: 200, contentType: "application/pdf", headers: { ...cors(req), "x-pagewell-allow-download": allowDownload ? "1" : "0" }, body: fixturePdf(3) });
+    }
+    const link = { role: "viewer", allowDownload, expiresAt: null };
+    if (kind === "document") return route.fulfill(json(req, { data: { link, document: doc(DOC, "Shared.pdf", 4), folder: null, folders: [], documents: [] } }));
+    const folder = { id: "fld_" + "f".repeat(32), orgId: ORG, parentId: null, name: "Shared folder", createdAt: "", updatedAt: "", deletedAt: null };
+    return route.fulfill(json(req, { data: { link, document: null, folder, folders: [], documents: [doc(DOC, "In the folder.pdf", 2)] } }));
+  });
+  return seen;
+}
+
+test("a share link with a password opens view only; the password goes in a header, never the URL", async ({ context, page }) => {
+  const seen = await fakeLink(context, { password: "correct horse", allowDownload: false });
+  await page.goto(`/l/${LINK}`);
+  const dialog = page.locator("#link-password");
+  await expect(dialog).toBeVisible({ timeout: 150_000 });
+  await page.locator("#link-password-input").fill("correct horse");
+  await dialog.getByRole("button", { name: "Open" }).click();
+  await expect(page.locator("#status")).toContainText("Shared.pdf — view only");
+  await expect(page.locator("#save")).toBeHidden();
+  await expect(page.locator("#open-label")).toBeHidden();
+  await expect(page.locator("#download")).toBeHidden();
+  expect(seen.passwords.at(-1)).toBe("correct horse");
+  expect(seen.urls.join(" ")).not.toContain("horse");
+  // An edit made here is not saved anywhere.
+  await page.evaluate(() => window.pagewell.automation({ tool: "page_delete", args: { pages: [1] } }));
+  await page.evaluate(() => window.pagewell.editor.save()).catch(() => undefined);
+  expect(seen.urls.every((u) => !u.includes("/versions"))).toBe(true);
+});
+
+test("a folder link lists its documents and opens the one chosen, with a download when allowed", async ({ context, page }) => {
+  await fakeLink(context, { kind: "folder", allowDownload: true });
+  await page.goto(`/l/${LINK}`);
+  const dialog = page.locator("#link-folder");
+  await expect(dialog).toBeVisible({ timeout: 150_000 });
+  await dialog.getByRole("button", { name: "In the folder.pdf" }).click();
+  await expect(page.locator("#status")).toContainText("In the folder.pdf — view only");
+  await expect(page.locator("#download")).toBeVisible();
+});
+
+test("a turned-off link says so", async ({ context, page }) => {
+  await fakeLink(context, { dead: true });
+  await page.goto(`/l/${LINK}`);
+  await expect(page.locator("#status")).toContainText("doesn't work any more", { timeout: 150_000 });
+});

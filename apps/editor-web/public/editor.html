@@ -22,6 +22,7 @@
       <label class="button" id="open-label">Open PDF<input id="open" type="file" accept="application/pdf,.pdf" hidden></label>
       <button class="button" id="save" type="button" disabled>Save</button>
       <button class="button" id="undo" type="button" disabled title="Undo the last assistant edit">Undo</button>
+      <button class="button" id="download" type="button" hidden>Download</button>
     </div>
     <output id="status" role="status" aria-live="polite">Loading the editor…</output>
   </header>
@@ -36,6 +37,27 @@
         <button class="button" value="copy" type="submit">Save as a copy</button>
         <button class="button" value="reload" type="submit">Reload, discarding my changes</button>
         <button class="button" value="cancel" type="submit">Keep editing</button>
+      </div>
+    </form>
+  </dialog>
+  <dialog id="link-password" aria-labelledby="link-password-title">
+    <form method="dialog">
+      <h2 id="link-password-title">This link has a password</h2>
+      <p id="link-password-text">Enter the password the person who shared it gave you.</p>
+      <input id="link-password-input" type="password" autocomplete="off" aria-label="Link password" required minlength="1" maxlength="200">
+      <div class="dialog-actions">
+        <button class="button" value="ok" type="submit">Open</button>
+        <button class="button" value="cancel" type="submit" formnovalidate>Cancel</button>
+      </div>
+    </form>
+  </dialog>
+  <dialog id="link-folder" aria-labelledby="link-folder-title">
+    <form method="dialog">
+      <h2 id="link-folder-title">Shared folder</h2>
+      <p id="link-folder-path"></p>
+      <ul id="link-folder-list" class="link-list"></ul>
+      <div class="dialog-actions">
+        <button class="button" value="cancel" type="submit">Close</button>
       </div>
     </form>
   </dialog>

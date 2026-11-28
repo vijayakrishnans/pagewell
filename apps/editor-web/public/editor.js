@@ -5,6 +5,7 @@
 //   /edit/fixture               the generated 100-page fixture
 //   /edit/<doc_…>?org=<org_…>   a document in the drive (cloud.js): opened with the session the
 //                               console hands this tab, saved as the next version
+//   /l/<token>                  a share link (cloud.js), view only: nothing is saved anywhere
 //
 // `window.pagewell` exposes the editor and the page's helpers to tests (Playwright drives the
 // bridge API through it).
@@ -17,19 +18,23 @@ const $ = (id) => document.getElementById(id);
 const status = $("status");
 const saveButton = $("save");
 const undoButton = $("undo");
+const downloadButton = $("download");
 const canvas = $("editor");
 
 let fileName = "document.pdf";
 let fileHandle = null;
 /** Set when the open document lives in the drive: saves go there instead of to disk. */
 let cloud = null;
+/** Set on a share link: nothing is saved, and a download is offered only if the link allows it. */
+let viewOnly = false;
 
 function say(text, isError = false) {
   status.textContent = text;
   status.classList.toggle("error", isError);
 }
 
-const docId = location.pathname.replace(/^\/edit\/?/, "").replace(/\/$/, "") || "local";
+const linkToken = location.pathname.match(/^\/l\/([A-Za-z0-9_-]{20,128})\/?$/)?.[1] ?? null;
+const docId = linkToken ? "link" : location.pathname.replace(/^\/edit\/?/, "").replace(/\/$/, "") || "local";
 
 // The editor draws with WebGL2. Without it eframe never starts, so say why instead of waiting.
 const probe = document.createElement("canvas").getContext("webgl2");
@@ -54,6 +59,10 @@ canvas.addEventListener("pagewell:save", (e) => {
 
 /** Save where the document came from: the drive, or this device. */
 async function store(bytes, name) {
+  if (viewOnly) {
+    say("This is a shared link: it's view only, so changes aren't saved.", true);
+    return null;
+  }
   if (cloud) return cloud.save(bytes);
   return writeOut(bytes, name);
 }
@@ -61,7 +70,7 @@ async function store(bytes, name) {
 function openBytes(bytes, name) {
   fileName = name || "document.pdf";
   editor.open(bytes, fileName);
-  saveButton.disabled = false;
+  saveButton.disabled = viewOnly;
   undoButton.disabled = true;
   say(fileName);
 }
@@ -119,14 +128,32 @@ async function automation(call) {
 // Set when the page navigates on purpose (to a copy it just saved), so the guard stays quiet.
 let leaving = false;
 window.addEventListener("beforeunload", (e) => {
-  if (!leaving && editor.isDirty()) e.preventDefault();
+  if (!leaving && !viewOnly && editor.isDirty()) e.preventDefault();
 });
 function leave(href) {
   leaving = true;
   location.assign(href);
 }
 
-if (docId === "local") {
+if (linkToken) {
+  viewOnly = true;
+  for (const el of [saveButton, undoButton, $("open-label")]) el.hidden = true;
+  $("open").disabled = true;
+  const { openFromLink } = await cloudModule;
+  const shared = await openFromLink({ token: linkToken, say, openBytes });
+  if (shared?.allowDownload) {
+    downloadButton.hidden = false;
+    // The file as it was shared, not any changes made here.
+    downloadButton.addEventListener("click", () => {
+      const url = URL.createObjectURL(new Blob([shared.bytes], { type: "application/pdf" }));
+      const a = Object.assign(document.createElement("a"), { href: url, download: shared.name });
+      document.body.append(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    });
+  }
+} else if (docId === "local") {
   say("Open a PDF from this device to start.");
 } else if (docId.startsWith("doc_")) {
   const { openFromDrive } = await cloudModule;
