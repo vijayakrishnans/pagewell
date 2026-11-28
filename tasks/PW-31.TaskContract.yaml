@@ -8,6 +8,7 @@ spec:
   affects:
     - default/pagewell/db
     - default/pagewell/db-tests
+    - default/pagewell/db-migrate
     - default/pagewell/contracts
     - default/pagewell/shared
     - packages/db/**
