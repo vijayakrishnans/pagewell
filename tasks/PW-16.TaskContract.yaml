@@ -8,6 +8,12 @@ spec:
   affects:
     - default/pagewell/policy-worker
     - default/pagewell/db-migrate
+    - default/pagewell/policy-engine
+    - default/pagewell/policy-engine-tests
+    - default/pagewell/db
+    - default/pagewell/db-tests
+    - default/pagewell/contracts
+    - default/pagewell/contracts-tests
     - packages/policy-engine/**
     - packages/db/**
     - packages/contracts/**
