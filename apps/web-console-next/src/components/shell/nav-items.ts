@@ -71,9 +71,9 @@ export function buildNavSections(scope: NavScope, soloMode: boolean = SOLO_MODE)
           ]
         : [
             { href: `${orgBase}/drive`, label: "Drive", icon: "HardDrive" },
-            { href: `${orgBase}/projects`, label: "Projects", icon: "FolderKanban" },
-            { href: `${orgBase}/usage`, label: "Usage & quota", icon: "Gauge" },
-            // Opens the dedicated settings panel — flagged so the renderer shows a ›.
+            // Team profile (PW-18): members, roles and invitations live under
+            // Settings. The baseline's Projects and Usage are platform plumbing,
+            // not Pagewell surfaces, so they are not in the nav.
             { href: `${orgBase}/settings`, label: "Settings", icon: "Settings", subPanel: true },
           ],
     });

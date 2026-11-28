@@ -1,0 +1,27 @@
+# Task PW-18 (milestone PW3), minted in Orunbase with this contract inline.
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: PW-18
+spec:
+  goal: Pagewell runs the baseline's team profile, SOLO_MODE off in api-edge, identity, membership and the console, so orgs have members, roles and invitations; the console's org home and nav lead with the drive.
+  affects:
+    - default/pagewell/api-edge
+    - default/pagewell/identity-worker
+    - default/pagewell/membership-worker
+    - default/pagewell/web-console-next
+    - default/pagewell/web-console-next-tests
+    - apps/api-edge/wrangler.template.jsonc
+    - apps/identity-worker/wrangler.template.jsonc
+    - apps/membership-worker/wrangler.template.jsonc
+    - apps/web-console-next/**
+    - tests/web-console-next/**
+    - specs/epics/pagewell-pdf-workspace/**
+    - ai/context/**
+    - tasks/**
+  deps: [PW-17]
+  doneWhen:
+    - On stage, org members and invitations routes answer (not 404) and a new user creates their first org at onboarding
+    - The console shows Members and invitations; an org's home is its Drive; Projects is not in Pagewell's nav
+    - Existing tests pass for both profiles
+  gates: []

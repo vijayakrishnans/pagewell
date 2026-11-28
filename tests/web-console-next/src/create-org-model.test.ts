@@ -92,16 +92,16 @@ describe("postCreatePath", () => {
     );
   });
 
-  it("routes everything else to the new org's projects dashboard", () => {
-    expect(postCreatePath("parent", { kind: "scratch" }, "acme")).toBe("/orgs/acme/projects");
-    expect(postCreatePath("child", { kind: "scratch" }, "acme")).toBe("/orgs/acme/projects");
+  it("routes everything else to the new org's drive (Pagewell's home)", () => {
+    expect(postCreatePath("parent", { kind: "scratch" }, "acme")).toBe("/orgs/acme/drive");
+    expect(postCreatePath("child", { kind: "scratch" }, "acme")).toBe("/orgs/acme/drive");
     expect(postCreatePath("child", { kind: "template", templateId: "web-app" }, "acme")).toBe(
-      "/orgs/acme/projects",
+      "/orgs/acme/drive",
     );
   });
 
-  it("Solo: routes to the org's Account surface — projects and integrations are suppressed", () => {
-    expect(postCreatePath("parent", { kind: "scratch" }, "acme", true)).toBe("/orgs/acme/settings");
-    expect(postCreatePath("child", { kind: "git", provider: "github" }, "acme", true)).toBe("/orgs/acme/settings");
+  it("Solo: routes to the drive too", () => {
+    expect(postCreatePath("parent", { kind: "scratch" }, "acme", true)).toBe("/orgs/acme/drive");
+    expect(postCreatePath("child", { kind: "git", provider: "github" }, "acme", true)).toBe("/orgs/acme/drive");
   });
 });

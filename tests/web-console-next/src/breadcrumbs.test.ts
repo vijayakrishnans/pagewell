@@ -3,9 +3,9 @@ import { buildBreadcrumbs } from "@web-console-next/components/shell/breadcrumbs
 const org = { orgSlug: "acme", orgName: "Acme Inc" };
 
 describe("buildBreadcrumbs", () => {
-  it("starts with the org name linking to its Projects home", () => {
+  it("starts with the org name linking to its Drive home", () => {
     const crumbs = buildBreadcrumbs({ ...org, pathname: "/orgs/acme/usage" });
-    expect(crumbs[0]).toEqual({ label: "Acme Inc", href: "/orgs/acme/projects" });
+    expect(crumbs[0]).toEqual({ label: "Acme Inc", href: "/orgs/acme/drive" });
   });
 
   it("renders the org page itself as a single unlinked crumb", () => {
@@ -15,7 +15,7 @@ describe("buildBreadcrumbs", () => {
   it("labels known segments and leaves the last crumb unlinked", () => {
     const crumbs = buildBreadcrumbs({ ...org, pathname: "/orgs/acme/settings/members" });
     expect(crumbs).toEqual([
-      { label: "Acme Inc", href: "/orgs/acme/projects" },
+      { label: "Acme Inc", href: "/orgs/acme/drive" },
       { label: "Settings", href: "/orgs/acme/settings" },
       { label: "Members" },
     ]);
@@ -27,7 +27,7 @@ describe("buildBreadcrumbs", () => {
       pathname: "/orgs/acme/projects/demo-app/environments",
     });
     expect(crumbs).toEqual([
-      { label: "Acme Inc", href: "/orgs/acme/projects" },
+      { label: "Acme Inc", href: "/orgs/acme/drive" },
       { label: "Projects", href: "/orgs/acme/projects" },
       { label: "demo-app", href: "/orgs/acme/projects/demo-app/environments" },
       { label: "Environments" },
@@ -48,7 +48,7 @@ describe("buildBreadcrumbs", () => {
       pathname: "/orgs/acme/settings/billing/change-plan",
     });
     expect(crumbs).toEqual([
-      { label: "Acme Inc", href: "/orgs/acme/projects" },
+      { label: "Acme Inc", href: "/orgs/acme/drive" },
       { label: "Settings", href: "/orgs/acme/settings" },
       { label: "Billing & plan", href: "/orgs/acme/settings/billing" },
       { label: "Change plan" },
@@ -61,7 +61,7 @@ describe("buildBreadcrumbs", () => {
       pathname: "/orgs/acme/settings/webhooks/ep_123",
     });
     expect(crumbs).toEqual([
-      { label: "Acme Inc", href: "/orgs/acme/projects" },
+      { label: "Acme Inc", href: "/orgs/acme/drive" },
       { label: "Settings", href: "/orgs/acme/settings" },
       { label: "Webhooks", href: "/orgs/acme/settings/webhooks" },
       { label: "ep_123" },
@@ -75,8 +75,8 @@ describe("buildBreadcrumbs", () => {
 });
 
 describe("buildBreadcrumbs (Solo)", () => {
-  it("roots the org crumb at the Account surface, not the suppressed projects page", () => {
+  it("roots the org crumb at the drive", () => {
     const crumbs = buildBreadcrumbs({ orgSlug: "acme", orgName: "Acme Inc", pathname: "/orgs/acme/settings", soloMode: true });
-    expect(crumbs[0]).toEqual({ label: "Acme Inc", href: "/orgs/acme/settings" });
+    expect(crumbs[0]).toEqual({ label: "Acme Inc", href: "/orgs/acme/drive" });
   });
 });
