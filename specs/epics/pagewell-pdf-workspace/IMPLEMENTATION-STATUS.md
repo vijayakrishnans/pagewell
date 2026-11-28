@@ -9,7 +9,7 @@ the code departed from `design.md`.
 | PW1 — editor on the web | ✅ done 2026-11-28: vendor subtree (PW-3), upstream hooks P1/P2 (PW-5, PW-6), Rust workspace + bridge (PW-4), editor-web on stage (PW-7), three browsers, budgets, brand check (PW-8). Both budgets missed and recorded (risk PW-C) | #5, #6, #7, #8, #9, #10 |
 | PW2 — drive | ✅ done 2026-11-28: data layer (PW-9), files worker (PW-10), R2 buckets (PW-11), api-edge facade (PW-12), the drive in the console (PW-13), the editor opens and saves drive documents (PW-14), files worker live on stage and prod (PW-15). Verified on stage: 44 API checks and the real editor (see "PW2 on stage") | #11–#18 |
 | PW3 — orgs and sharing | ✅ done 2026-11-28: sharing data and the access rules with the permission matrix (PW-16), files-worker enforces sharing with links, guests, activity and audit (PW-17), team profile on (PW-18), sharing at the edge, in the SDK and by email (PW-19), sharing in the console (PW-20), the share-link viewer and the stage run (PW-21). Verified on stage: 47 sharing checks and the real editor on a link (see "PW3 on stage") | #19–#25 |
-| PW4 — heavy jobs | in progress: pdf-jobs-worker, its data, the edge and the SDK (PW-24); the runner image (PW-23, #27). Running jobs waits on the Containers grant (WAITING W4) | |
+| PW4 — heavy jobs | in progress: the runner image (PW-23, #27), pdf-jobs-worker, its data, the edge and the SDK (PW-24, #28, live on stage without a runner), tools in the console and Print in the editor (PW-25). Running jobs waits on the Containers grant (WAITING W4) | #28 |
 | PW5 — review | | |
 | PW6 — e-sign | | |
 | PW7 — remote MCP | | |
@@ -234,6 +234,18 @@ multi-org by the brief, so PW3 turns the team profile on everywhere. What change
   answers `503 runner_unavailable`; the rest of the API is live. api-edge routes `/jobs` (own
   rate-limit family) with the actor and email; the SDK has `client.jobs`.
 - **Not yet:** progress through `DocRoom` (polling instead), metering container seconds.
+
+### D19 — Tools and Print as built (PW-25)
+- **Console:** row menu → Run a tool… (documents): the twelve operations with what each asks
+  (pages as `1, 3-5`, degrees, every N pages, quality, documents to merge with from the same
+  folder) and, for the versioning ones, next version or new document. Started jobs sit in a tray
+  on the drive page, polled every 2 s until they end (toast, listing refreshed); a finished file
+  result (print, text, page images) opens in a new tab through an authenticated fetch.
+- **Editor:** Print (drive documents only) starts a `print` job on the version open in the editor,
+  polls it, and opens the print-ready PDF in a tab opened by the click. Local files keep the
+  browser's own print.
+- **Without a runner** both say so ("Heavy tools aren't available here yet", "Printing from the
+  server isn't available yet") instead of failing silently.
 
 ## PW3 on stage (2026-11-28)
 - **API, `tooling/e2e/sharing-stage.mjs`, 47 checks green** (twice: before and after the viewer

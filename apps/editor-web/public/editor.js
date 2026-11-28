@@ -158,7 +158,16 @@ if (linkToken) {
 } else if (docId.startsWith("doc_")) {
   const { openFromDrive } = await cloudModule;
   cloud = await openFromDrive({ docId, say, openBytes, automation, leave });
-  if (cloud) $("open-label").hidden = true;
+  if (cloud) {
+    $("open-label").hidden = true;
+    const printButton = $("print");
+    printButton.hidden = false;
+    printButton.addEventListener("click", () => {
+      // The tab opens now, on the click; it gets the PDF when the job is done.
+      const tab = window.open("", "_blank");
+      cloud.print(tab).catch((err) => say(String(err), true));
+    });
+  }
 } else {
   say("Opening…");
   const res = await fetch(`/fixtures/${encodeURIComponent(docId)}.pdf`);
