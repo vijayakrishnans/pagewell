@@ -18,3 +18,4 @@ export * from "./notifications.js";
 export * from "./integrations.js";
 export * from "./files.js";
 export * from "./sharing.js";
+export * from "./jobs.js";

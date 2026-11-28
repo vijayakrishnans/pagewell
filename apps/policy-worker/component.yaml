@@ -68,3 +68,4 @@ spec:
 # ci: trigger full-component verification (orun v2.12.0 upgrade — PR #183)
 # orun: redeploy PW-12 stub for FILES_WORKER 20261128T010000Z
 # orun: redeploy PW-16 files access rules (files.comment, files.share, resource-level decisions) 20261128T022000Z
+# orun: redeploy PW-24 stub for JOBS_WORKER 20261128T040000Z
