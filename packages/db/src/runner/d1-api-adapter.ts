@@ -77,7 +77,8 @@ export class D1ApiAdapter implements MigrationAdapter {
   }
 
   /** Split a migration file into statements on top-level semicolons, leaving
-   *  semicolons inside string literals and `--` comments alone. */
+   *  semicolons inside string literals and `--` comments alone, and inside a
+   *  `CREATE TRIGGER … BEGIN … END` body (split after its `END;`). */
   static splitStatements(sql: string): string[] {
     const out: string[] = [];
     let buf = "";
@@ -102,6 +103,12 @@ export class D1ApiAdapter implements MigrationAdapter {
         continue;
       }
       if (ch === ";" && !inString) {
+        // A trigger body holds its own statements; it ends at END.
+        const code = buf.replace(/--[^\n]*/g, "");
+        if (/^\s*CREATE\s+(?:TEMP\s+|TEMPORARY\s+)?TRIGGER\b/i.test(code) && !/\bEND\s*$/i.test(code)) {
+          buf += ch;
+          continue;
+        }
         if (buf.trim()) out.push(buf.trim());
         buf = "";
         continue;
