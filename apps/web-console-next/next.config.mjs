@@ -38,10 +38,10 @@ const nextConfig = {
   },
   env: {
     NEXT_PUBLIC_DEPLOY_ENV: process.env.NEXT_PUBLIC_DEPLOY_ENV ?? "",
-    // M0 / Solo profile (Pagewell ships single-user). Build with
-    // NEXT_PUBLIC_SOLO_MODE=false to restore the full multi-tenant baseline.
-    // See specs/profiles/solo-m0.md.
-    NEXT_PUBLIC_SOLO_MODE: process.env.NEXT_PUBLIC_SOLO_MODE ?? "true",
+    // Pagewell runs the team profile (PW-18): orgs with members, roles and
+    // invitations. NEXT_PUBLIC_SOLO_MODE=true builds the M0/Solo profile instead,
+    // and must match api-edge, identity-worker and membership-worker.
+    NEXT_PUBLIC_SOLO_MODE: process.env.NEXT_PUBLIC_SOLO_MODE ?? "false",
   },
 };
 

@@ -15,8 +15,8 @@ describe("buildNavSections", () => {
     const org = buildNavSections({ orgSlug: "acme" }).find((s) => s.id === "org")!;
     const settings = org.links.find((l) => l.href === "/orgs/acme/settings")!;
     expect(settings.subPanel).toBe(true);
-    const projects = org.links.find((l) => l.href === "/orgs/acme/projects")!;
-    expect(projects.subPanel ?? false).toBe(false);
+    const drive = org.links.find((l) => l.href === "/orgs/acme/drive")!;
+    expect(drive.subPanel ?? false).toBe(false);
   });
 
   it("returns no sections when there is no org scope", () => {
@@ -29,12 +29,11 @@ describe("buildNavSections", () => {
     expect(ids).not.toContain("project");
   });
 
-  it("adds a product-focused org section when orgSlug is present", () => {
+  it("adds a product-focused org section when orgSlug is present (Pagewell: the drive, then settings)", () => {
     const org = buildNavSections({ orgSlug: "acme" }).find((s) => s.id === "org")!;
     const hrefs = org.links.map((l) => l.href);
-    expect(hrefs).toContain("/orgs/acme/projects");
-    expect(hrefs).toContain("/orgs/acme/usage");
-    expect(hrefs).toContain("/orgs/acme/settings");
+    expect(hrefs).toEqual(["/orgs/acme/drive", "/orgs/acme/settings"]);
+    expect(hrefs).not.toContain("/orgs/acme/projects");
     expect(org.label).toBe("Org · acme");
   });
 
@@ -76,15 +75,10 @@ describe("buildNavSections under the Solo (M0) profile", () => {
     expect(sections.find((s) => s.id === "project")).toBeUndefined();
   });
 
-  it("keeps the full baseline section when soloMode is false", () => {
+  it("the team profile (soloMode false) names the org and leads with the drive; no projects or usage", () => {
     const org = buildNavSections({ orgSlug: "acme" }, false).find((s) => s.id === "org")!;
     expect(org.label).toBe("Org · acme");
-    expect(org.links.map((l) => l.href)).toEqual([
-      "/orgs/acme/drive",
-      "/orgs/acme/projects",
-      "/orgs/acme/usage",
-      "/orgs/acme/settings",
-    ]);
+    expect(org.links.map((l) => l.href)).toEqual(["/orgs/acme/drive", "/orgs/acme/settings"]);
   });
 });
 

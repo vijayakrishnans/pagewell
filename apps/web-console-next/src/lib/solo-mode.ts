@@ -22,14 +22,13 @@ export const SOLO_MODE: boolean =
   typeof process !== "undefined" && process.env.NEXT_PUBLIC_SOLO_MODE === "true";
 
 /**
- * An org's landing page under the active profile: its projects in the
- * baseline, its Account (settings) surface in Solo, where projects are
- * suppressed at the edge and the projects page could only show
- * "Route not found: /v1/organizations/<id>/projects". Every link that means
- * "this org's home" goes through here, never a hard-coded `/projects`.
+ * An org's landing page: its Drive, in both profiles (Pagewell, PW-18). The
+ * baseline's projects are platform plumbing Pagewell's users never work in.
+ * Every link that means "this org's home" goes through here, never a
+ * hard-coded path. `soloMode` stays in the signature for callers and tests.
  */
-export function orgHomePath(orgSlug: string, soloMode: boolean = SOLO_MODE): string {
-  return soloMode ? `/orgs/${orgSlug}/settings` : `/orgs/${orgSlug}/projects`;
+export function orgHomePath(orgSlug: string, _soloMode: boolean = SOLO_MODE): string {
+  return `/orgs/${orgSlug}/drive`;
 }
 
 /** The tenant noun shown in user-facing copy under the active profile. In Solo
