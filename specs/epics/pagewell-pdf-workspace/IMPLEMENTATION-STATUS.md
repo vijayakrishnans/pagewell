@@ -408,6 +408,11 @@ Every done-when of PW5, on the deployed stage:
   notice; signers' and sender's emails are six new templates (`sign.requested`, `.reminder`,
   `.code`, `.declined`, `.voided`, `.completed`).
 - **Stage returns links and codes** in responses (`DEBUG_DELIVERY`, as login codes there); prod never.
+- **On stage (2026-11-28), `tooling/e2e/sign-stage.mjs`, 39 checks green**: parallel and sequential
+  envelopes signed through to `completing` by two signers with no account (codes inline on stage),
+  the frozen hash, own-fields-only, documents only after verifying, spent links, the evidence chain
+  verifying with every step, decline and void killing links, a stranger's 404s, and the audit log.
+  Completion itself waits on the runner (W4).
 - **Verified with the real runner locally**: a two-signer envelope (one drawn signature) went
   through the real `sign_complete`; the PDF in the sender's drive validates in poppler's pdfsig
   ("Signature is Valid", "Total document signed") with its certificate page.
