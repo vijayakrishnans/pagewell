@@ -77,7 +77,8 @@ export interface ListReviewRequestsResponse {
 /** Messages the DocRoom sends to everyone in the room (over its WebSocket). */
 export type RoomEvent =
   | { type: "presence"; people: Array<{ id: string; name: string | null; editing: boolean }> }
-  | { type: "lease"; holder: { id: string; name: string | null } | null; expiresAt: string | null }
+  | { type: "hello"; you: { id: string; name: string | null }; canEdit: boolean; canBreak: boolean }
+  | { type: "lease"; holder: { id: string; name: string | null } | null; expiresAt: string | null; /** This connection holds it. */ mine: boolean }
   | { type: "thread"; thread: PublicThread }
   | { type: "version"; version: number; by: string | null }
   | { type: "job"; jobId: string; status: string };

@@ -10,7 +10,7 @@ the code departed from `design.md`.
 | PW2 — drive | ✅ done 2026-11-28: data layer (PW-9), files worker (PW-10), R2 buckets (PW-11), api-edge facade (PW-12), the drive in the console (PW-13), the editor opens and saves drive documents (PW-14), files worker live on stage and prod (PW-15). Verified on stage: 44 API checks and the real editor (see "PW2 on stage") | #11–#18 |
 | PW3 — orgs and sharing | ✅ done 2026-11-28: sharing data and the access rules with the permission matrix (PW-16), files-worker enforces sharing with links, guests, activity and audit (PW-17), team profile on (PW-18), sharing at the edge, in the SDK and by email (PW-19), sharing in the console (PW-20), the share-link viewer and the stage run (PW-21). Verified on stage: 47 sharing checks and the real editor on a link (see "PW3 on stage") | #19–#25 |
 | PW4 — heavy jobs | in progress: the runner image (PW-23, #27), pdf-jobs-worker, its data, the edge and the SDK (PW-24, #28, live on stage without a runner), tools in the console and Print in the editor (PW-25). Running jobs waits on the Containers grant (WAITING W4) | #28 |
-| PW5 — review | in progress: review data and the anchor rule (PW-28), review-worker with the DocRoom (PW-29) | #33 |
+| PW5 — review | in progress: review data and the anchor rule (PW-28), review-worker with the DocRoom (PW-29), the editor's panel and lease (PW-30) | #33, #34, #35 |
 | PW6 — e-sign | | |
 | PW7 — remote MCP | | |
 | PW8 — chat with documents | | |
@@ -307,6 +307,28 @@ multi-org by the brief, so PW3 turns the team profile on everywhere. What change
   lease held by the owner and refused to a guest commenter, comments and replies live both ways,
   the new-version notice, a quoted thread carried to v2 and one on a changed page outdated, the
   reviewer's decision closing the request, the lease freed on leave, and the audit log.
+
+### D22 — review in the editor as built (PW-30)
+- **A side panel** in the editor for drive documents: the document's threads (as the server
+  carried them), a comment on a page with the words it is about, replies, resolve and reopen.
+  Every comment is rendered as text (`textContent`), never as HTML; the mocked test puts markup in
+  a comment and checks it is shown, not run.
+- **Comments are on a page, not a selection**: the editor's bridge does not report a selection or
+  a click position yet, so the anchor is the page (`rect [0,0,0,0]`) plus the quoted words. The
+  design's injection of server comments into the PDF view (with a marker stripped before save) is
+  not built; the panel is the view.
+- **The room from the browser**: a ticket per (re)connect, then a WebSocket to
+  `wss://<api>/v1/organizations/{org}/documents/{doc}/room` (the editor's CSP allows the API's
+  `wss:` origin). It reconnects with backoff and refreshes the threads on reconnect; a 404 on the
+  ticket stops it.
+- **The lease is a courtesy, not the guard.** The first person who may edit takes it and renews it
+  every 20 s; Save is off for everyone else (a banner names the holder; "Take over" for those who
+  may share). When the room cannot be reached, Save stays on and the drive's version check (409,
+  save as a copy or reload) still stops one save overwriting another. The drive does not check the
+  lease itself.
+- **The room says hello** with who you are and what you may do, so the panel can leave you out of
+  "Also here", and each lease event says whether it is this connection's (`mine`), so one person
+  in two tabs edits in one.
 
 ## OWASP review of PW2–PW4 (PW-26, 2026-11-28)
 Asked for by the user for every build from now on; each PR states the areas it touches.

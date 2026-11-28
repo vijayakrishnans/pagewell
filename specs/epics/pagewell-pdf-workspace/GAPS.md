@@ -56,6 +56,10 @@ another way, on purpose), **blocked** (waits on something outside the code), **c
 |---|---|---|---|---|---|
 | Sync comments from the PDF (`annotationChanged`) | differently | The editor's bridge emits no annotation event | Comments made with the editor's own tools flowing to the server | The server is the source of truth; the editor's panel writes there (D20) | PW-30 |
 | Mentions of anyone with access | partial | Telling a stranger a document's name would leak it | Mentioning people not yet in the conversation | Only earlier commenters and reviewers are emailed (D21) | Later, with member names (needs the members gap) |
+| Comments anchored to a selection or a point | partial | The editor's bridge reports no selection or click position | Pinning a comment to a rectangle chosen on the page, and showing pins on the page | A comment names its page and, optionally, the words it is about (D22) | When the bridge reports a selection |
+| Server comments drawn in the PDF view (injected, stripped on save) | not done | Needs annotation calls in the bridge, and a strip step before every save | Comments drawn on the page | The side panel lists them by page (D22) | Later |
+| The drive checks the edit lease on save | not done | A second guard was judged unneeded: the version check already refuses a stale save | A save without the lease refused by files-worker | Save is off in the editor without the lease; the version check (409) still protects (D22) | Revisit if abuse shows up |
+| Asking for a review from the console or editor | not done | The API came first | A "Request review" dialog | `client.review.requestReview` in the SDK and the API (D21) | PW6 or later |
 | Room route `/v1/rooms/{doc}` | differently | The edge's org-scoped routing | — | `/v1/organizations/{org}/documents/{doc}/room` with a ticket (D21) | Closed as built |
 
 ## Security (OWASP review, PW-26)

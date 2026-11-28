@@ -271,3 +271,88 @@ test("Print is only offered for drive documents", async ({ page }) => {
   await page.waitForFunction(() => window.pagewell?.editor, null, { timeout: 150_000 });
   await expect(page.locator("#print")).toBeHidden();
 });
+
+// ---- Review (PW5): the comments panel, presence and the edit lease, against a faked room ----
+
+const ME = "usr_" + "1".repeat(32);
+const BEA = "usr_" + "2".repeat(32);
+const comment = (id, body, name = "bea@example.com") => ({ id, author: { kind: "member", id: BEA, name }, body, createdAt: "2026-11-28T09:00:00Z", editedAt: null, deleted: false });
+const thread = (id, page, body, extra = {}) => ({ id, documentId: DOC, anchor: { page, rect: [0, 0, 0, 0], quote: null }, version: 1, status: "open", createdAt: "2026-11-28T09:00:00Z", resolvedAt: null, comments: [comment(`cmt_${id}`, body)], ...extra });
+
+async function fakeReview(context) {
+  const seen = { posted: [], commands: [], room: null, ticketsAsked: 0 };
+  await context.route(`${base}/documents/${DOC}/threads`, async (route) => {
+    const req = route.request();
+    if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors(req) });
+    if (req.method() === "GET") return route.fulfill(json(req, { data: { threads: [thread("thr_1", 2, "<img src=x onerror=\"window.pwned=1\"> looks off")] } }));
+    const body = JSON.parse(req.postData() ?? "{}");
+    seen.posted.push(body);
+    return route.fulfill(json(req, { data: { thread: thread("thr_new", body.anchor.page, body.body, { anchor: body.anchor }) } }, 201));
+  });
+  await context.route(`${base}/documents/${DOC}/room/ticket`, async (route) => {
+    const req = route.request();
+    if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors(req) });
+    seen.ticketsAsked++;
+    return route.fulfill(json(req, { data: { ticket: "t".repeat(43), expiresAt: "2026-11-28T09:01:00Z", canEdit: true, canBreak: true } }, 201));
+  });
+  await context.routeWebSocket(/\/room\?ticket=/, (ws) => {
+    seen.room = ws;
+    const send = (e) => ws.send(JSON.stringify(e));
+    ws.onMessage((m) => {
+      const c = JSON.parse(String(m));
+      seen.commands.push(c);
+      if (c.type === "lease.break") send({ type: "lease", holder: null, expiresAt: null, mine: false });
+      if (c.type === "lease.take") send({ type: "lease", holder: { id: ME, name: "me@example.com" }, expiresAt: "2026-11-28T09:02:00Z", mine: true });
+    });
+    send({ type: "hello", you: { id: ME, name: "me@example.com" }, canEdit: true, canBreak: true });
+    send({ type: "lease", holder: { id: BEA, name: "bea@example.com" }, expiresAt: "2026-11-28T09:02:00Z", mine: false });
+    send({ type: "presence", people: [{ id: ME, name: "me@example.com", editing: false }, { id: BEA, name: "bea@example.com", editing: true }] });
+  });
+  return seen;
+}
+
+test("review: comments show as text, someone else's lease turns Save off, taking over turns it on, and live events arrive", async ({ context, page }) => {
+  await fakeDrive(context);
+  const review = await fakeReview(context);
+  await page.addInitScript(([apiBase, orgId, token]) => sessionStorage.setItem("pagewell.session", JSON.stringify({ token, apiBase, orgId })), [API, ORG, TOKEN]);
+  await page.goto(`/edit/${DOC}?org=${ORG}`);
+  await page.waitForFunction(() => window.pagewell?.review, null, { timeout: 150_000 });
+
+  // The thread is there, as text: the markup in it is shown, never run.
+  const first = page.locator('[data-thread="thr_1"]');
+  await expect(first).toContainText('<img src=x onerror="window.pwned=1"> looks off');
+  await expect(first.locator("img")).toHaveCount(0);
+  expect(await page.evaluate(() => window.pwned)).toBeUndefined();
+
+  // Bea holds the lease: Save is off, and who is here says so.
+  await expect(page.locator("#presence")).toHaveText("Also here: bea@example.com (editing)");
+  await expect(page.locator("#lease")).toContainText("bea@example.com is editing");
+  await expect(page.locator("#save")).toBeDisabled();
+  // Taking over breaks the lease; it is free, so this tab takes it, and Save comes back.
+  await page.locator("#lease").getByRole("button", { name: "Take over" }).click();
+  await expect(page.locator("#save")).toBeEnabled();
+  expect(review.commands.map((c) => c.type)).toEqual(["lease.break", "lease.take"]);
+
+  // A comment on page 3, with the words it is about.
+  await page.locator("#comment-page").fill("3");
+  await page.locator("#comment-quote").fill("payment terms");
+  await page.locator("#comment-body").fill("Thirty days, not sixty.");
+  await page.locator("#comment-form").getByRole("button", { name: "Comment" }).click();
+  await expect(page.locator('[data-thread="thr_new"]')).toContainText("Thirty days, not sixty.");
+  expect(review.posted).toEqual([{ anchor: { page: 3, rect: [0, 0, 0, 0], quote: "payment terms" }, body: "Thirty days, not sixty." }]);
+
+  // Someone else's comment arrives live.
+  review.room.send(JSON.stringify({ type: "thread", thread: thread("thr_live", 1, "Cover looks good") }));
+  await expect(page.locator('[data-thread="thr_live"]')).toContainText("Cover looks good");
+
+  // Saving tells the room the new version.
+  await page.evaluate(() => window.pagewell.automation({ tool: "page_delete", args: { pages: [1] } }));
+  await page.locator("#save").click();
+  await expect(page.locator("#status")).toContainText("Saved version 2");
+  await expect.poll(() => review.commands.find((c) => c.type === "version")).toEqual({ type: "version", version: 2 });
+
+  // Another's save offers a reload.
+  review.room.send(JSON.stringify({ type: "version", version: 3, by: "bea@example.com" }));
+  await expect(page.locator("#newer")).toBeVisible();
+  await expect(page.locator("#newer-text")).toHaveText("bea@example.com saved version 3.");
+});

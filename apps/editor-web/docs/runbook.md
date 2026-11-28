@@ -14,3 +14,9 @@ pinned bundle was built. Once the Rust lane on `main` publishes the new bundle, 
 
 **Re-deploy stage.** Merge to `main`; orun's `deploy` profile for stage runs the build,
 `wrangler deploy` and the smoke.
+
+## Review panel
+- **Save is greyed out**: someone else holds the edit lease (the banner names them), or you can only
+  comment. It frees 60 s after their tab closes or loses its connection.
+- **Comments don't arrive live**: the room's WebSocket isn't connecting. Check that the editor's
+  CSP `connect-src` lists the API's `wss:` origin and that api-edge passes `…/room` through.

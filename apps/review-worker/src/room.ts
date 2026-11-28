@@ -78,8 +78,13 @@ export class DocRoom implements DurableObject {
     return l;
   }
 
-  private leaseEvent(l: Lease | null): RoomEvent {
-    return { type: "lease", holder: l ? { id: l.id, name: l.name } : null, expiresAt: l ? new Date(l.expiresAt).toISOString() : null };
+  private leaseEvent(l: Lease | null, conn?: string): RoomEvent {
+    return { type: "lease", holder: l ? { id: l.id, name: l.name } : null, expiresAt: l ? new Date(l.expiresAt).toISOString() : null, mine: Boolean(l && conn && l.conn === conn) };
+  }
+
+  /** The lease to everyone, each told whether it is theirs (one person can be in two tabs). */
+  private broadcastLease(l: Lease | null) {
+    for (const { ws, who } of this.sockets()) this.send(ws, this.leaseEvent(l, who.conn));
   }
 
   private async presence(): Promise<RoomEvent> {
@@ -130,7 +135,8 @@ export class DocRoom implements DurableObject {
   async join(server: WebSocket, who: Attachment): Promise<void> {
     this.state.acceptWebSocket(server);
     server.serializeAttachment(who);
-    this.send(server, this.leaseEvent(await this.lease()));
+    this.send(server, { type: "hello", you: { id: who.id, name: who.name }, canEdit: who.canEdit, canBreak: who.canBreak });
+    this.send(server, this.leaseEvent(await this.lease(), who.conn));
     this.broadcast(await this.presence());
   }
 
@@ -148,16 +154,16 @@ export class DocRoom implements DurableObject {
     switch (cmd.type) {
       case "lease.take":
       case "lease.renew": {
-        if (!who.canEdit) return this.send(ws, this.leaseEvent(current));
-        if (current && current.conn !== who.conn) return this.send(ws, this.leaseEvent(current));
-        if (!current && cmd.type === "lease.renew") return this.send(ws, this.leaseEvent(null));
+        if (!who.canEdit) return this.send(ws, this.leaseEvent(current, who.conn));
+        if (current && current.conn !== who.conn) return this.send(ws, this.leaseEvent(current, who.conn));
+        if (!current && cmd.type === "lease.renew") return this.send(ws, this.leaseEvent(null, who.conn));
         const next: Lease = { conn: who.conn, id: who.id, name: who.name, expiresAt: now + LEASE_TTL_MS };
         await this.state.storage.put("lease", next);
         await this.state.storage.setAlarm(next.expiresAt);
         if (!current) {
-          this.broadcast(this.leaseEvent(next));
+          this.broadcastLease(next);
           this.broadcast(await this.presence());
-        } else this.send(ws, this.leaseEvent(next));
+        } else this.send(ws, this.leaseEvent(next, who.conn));
         return;
       }
       case "lease.release":
@@ -165,7 +171,7 @@ export class DocRoom implements DurableObject {
         return;
       case "lease.break":
         if (who.canBreak && current) await this.clearLease();
-        else this.send(ws, this.leaseEvent(current));
+        else this.send(ws, this.leaseEvent(current, who.conn));
         return;
       case "version":
         // A save by whoever holds the lease: everyone else learns there is a newer version.
@@ -181,7 +187,7 @@ export class DocRoom implements DurableObject {
   private async clearLease() {
     await this.state.storage.delete("lease");
     await this.state.storage.deleteAlarm();
-    this.broadcast(this.leaseEvent(null));
+    this.broadcastLease(null);
     this.broadcast(await this.presence());
   }
 

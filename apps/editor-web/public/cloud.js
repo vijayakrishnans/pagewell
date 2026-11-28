@@ -292,6 +292,10 @@ export async function openFromDrive({ docId, say, openBytes, automation, leave }
   return {
     save,
     print,
+    /** The drive API for this organization, signed in (review uses it). */
+    api,
+    /** The same API as a WebSocket origin and path, for the document's room. */
+    wsBase: `${API.replace(/^http/, "ws")}/v1/organizations/${session.orgId}`,
     get version() {
       return base;
     },

@@ -17,8 +17,8 @@ reason; `⛔ Blocked` is added beside the status when a row waits on
 | Office ⇄ PDF | Yes | Missing | PW11 (LibreOffice container, flag-gated) | planned | |
 | Accounts, cloud storage, versions | Yes | No | PW2 | verified (stage, 2026-11-28) | `tooling/e2e/drive-stage.mjs`; `tests/editor-e2e` › cloud-live, cloud; `tests/files-worker`; `tests/db` › files |
 | Org sharing, links, guests | Yes | No | PW3 | verified (stage, 2026-11-28) | `tooling/e2e/sharing-stage.mjs`; `tests/editor-e2e` › cloud-live (link), cloud (links); `tests/policy-engine` › permission matrix; `tests/files-worker` › sharing; `tests/db` › files-sharing; `tests/web-console-next` › sharing |
-| Comments synced across people | Yes | Local only | PW5 | planned | |
-| Review requests | Yes | No | PW5 | planned | |
+| Comments synced across people | Yes | Local only | PW5 | shipped (the editor's panel, presence and edit lease; comments on a page, not a selection) | `tests/review-worker`; `tests/editor-e2e` › review: comments show as text…; `cloud-live` › two people in one document |
+| Review requests | Yes | No | PW5 | shipped (API, emails, reminders; asking from the console is later) | `tests/review-worker` › review requests; `tooling/e2e/review-stage.mjs` |
 | Request e-signatures | Yes (Acrobat Sign) | No | PW6 (simple e-signature) | planned | |
 | Heavy jobs off-device | Yes (cloud) | No | PW4 | in_progress: runner verified in CI; jobs API live on stage without a runner ⛔ Blocked (W4) | `containers/pdf-runner` (19 checks); `tests/pdf-jobs-worker`; `tooling/e2e/jobs-stage.mjs` |
 | Remote MCP for agents | Partial | Local stdio MCP | PW7 | planned | |

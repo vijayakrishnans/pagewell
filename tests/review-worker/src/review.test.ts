@@ -194,6 +194,8 @@ describe("the DocRoom", () => {
     expect(vera.socket.last("lease")!.holder).toBeNull();
     await room.webSocketMessage(alice.socket as unknown as WebSocket, JSON.stringify({ type: "lease.take" }));
     expect(builder.socket.last("lease")!.holder).toEqual({ id: ALICE, name: AE });
+    // Each connection is told whether the lease is its own.
+    expect([alice.socket.last("lease")!.mine, builder.socket.last("lease")!.mine]).toEqual([true, false]);
     await room.webSocketMessage(builder.socket as unknown as WebSocket, JSON.stringify({ type: "lease.take" }));
     expect(builder.socket.last("lease")!.holder.id).toBe(ALICE);
     expect(vera.socket.last("presence")!.people.find((p: { id: string }) => p.id === ALICE).editing).toBe(true);
