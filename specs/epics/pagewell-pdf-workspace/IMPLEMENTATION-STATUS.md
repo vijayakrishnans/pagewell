@@ -8,7 +8,7 @@ the code departed from `design.md`.
 | PW0 — the spec | ✅ done 2026-11-27 (PW-1 doc set; PW-2 public, listing-ready repo) | #3, #4 |
 | PW1 — editor on the web | ✅ done 2026-11-28: vendor subtree (PW-3), upstream hooks P1/P2 (PW-5, PW-6), Rust workspace + bridge (PW-4), editor-web on stage (PW-7), three browsers, budgets, brand check (PW-8). Both budgets missed and recorded (risk PW-C) | #5, #6, #7, #8, #9, #10 |
 | PW2 — drive | ✅ done 2026-11-28: data layer (PW-9), files worker (PW-10), R2 buckets (PW-11), api-edge facade (PW-12), the drive in the console (PW-13), the editor opens and saves drive documents (PW-14), files worker live on stage and prod (PW-15). Verified on stage: 44 API checks and the real editor (see "PW2 on stage") | #11–#18 |
-| PW3 — orgs and sharing | in progress: sharing data and the access rules (PW-16), files-worker enforces sharing with links, guests, activity and audit (PW-17), team profile on (PW-18), sharing at the edge, in the SDK and by email (PW-19), sharing in the console (PW-20) | #19, #20, #21, #22 |
+| PW3 — orgs and sharing | ✅ done 2026-11-28: sharing data and the access rules with the permission matrix (PW-16), files-worker enforces sharing with links, guests, activity and audit (PW-17), team profile on (PW-18), sharing at the edge, in the SDK and by email (PW-19), sharing in the console (PW-20), the share-link viewer and the stage run (PW-21). Verified on stage: 47 sharing checks and the real editor on a link (see "PW3 on stage") | #19–#25 |
 | PW4 — heavy jobs | | |
 | PW5 — review | | |
 | PW6 — e-sign | | |
@@ -211,6 +211,28 @@ multi-org by the brief, so PW3 turns the team profile on everywhere. What change
   lands on Shared with me when something is shared with them.
 - **Activity** (row menu, documents): the audit entries for the document, newest first, paged.
 - **Guests** (Settings → Guests): list, with whether each has opened anything, and remove.
+
+## PW3 on stage (2026-11-28)
+- **API, `tooling/e2e/sharing-stage.mjs`, 47 checks green** (twice: before and after the viewer
+  deployed). An owner, an org viewer joined by invitation, a guest outside the org, and a second
+  org's owner, with a generated PDF:
+  - team profile: nothing is made at sign-in; an invitation is sent and accepted;
+  - the viewer reads but cannot write by role; an editor grant on a folder lets them edit inside
+    it and nowhere else;
+  - a guest shared with by email opens what is in the folder and nothing else, cannot edit, see
+    the root or share; Shared with me and their access are right; they are verified on first open;
+  - the access list shows both grants as inherited from the folder;
+  - a password link: `401` without or with a wrong password, opens with it (owner blanked),
+    content `no-store` with download off, read only; revoked, **the very next request is `404`**;
+  - isolation: the guest's grant means nothing in org B; org B's owner gets `404` on five org-A
+    routes; removing the guest cuts their access at once;
+  - the document's activity and the org's audit log (`category=files`) hold every share event,
+    and never the link token.
+- **Editor, `specs/cloud-live.spec.mjs`, green in Chromium against stage:** the PW2 drive run
+  (now making its own org under the team profile), and a real link: the viewer asks for the
+  password, opens the document view only with Download offered, and after the link is turned off
+  a reload says it no longer works.
+- **The PW2 drive run** (`drive-stage.mjs`, 44 checks) is green again under the team profile.
 
 ## PW2 on stage (2026-11-28)
 - **API, `tooling/e2e/drive-stage.mjs`, 44 checks green.** Two throwaway users in their
