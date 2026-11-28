@@ -130,3 +130,12 @@ the opened window only, never into a URL; the editor keeps it in sessionStorage 
 Fix: a product domain with a shared `HttpOnly` cookie, or a short-lived, document-scoped editor
 token from identity-worker. Decide by PW11 (prod).
 
+
+## PW-O — Link-password guessing is limited per colo, not globally (open, 2026-11-28)
+A share link with a password answers `401` until the right one is sent. api-edge rate-limits
+`/v1/l/*` at 60 requests a minute per client address, but reads use the in-isolate limiter, so a
+guesser spread across many colos and addresses gets more tries than that. Mitigations in place:
+the token itself is 256 bits (the password is a second factor, not the only one); passwords are
+8–200 characters; they are PBKDF2-SHA256 hashed (100,000 iterations, per-link salt); every open
+is counted in `files_link_opens`. Fix if it matters: count failed password attempts per link in
+D1 and lock the link for a while after N failures. Decide by PW11 (prod).

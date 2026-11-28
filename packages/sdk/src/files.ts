@@ -19,6 +19,21 @@ import {
   type UploadPartResponse,
   type UploadResponse,
 } from "@saas/contracts/files";
+import {
+  LINK_PASSWORD_HEADER,
+  type AccessListResponse,
+  type ActivityResponse,
+  type CreateGrantRequest,
+  type CreateLinkRequest,
+  type CreateLinkResponse,
+  type GrantResponse,
+  type LinkOpenResponse,
+  type ListGuestsResponse,
+  type PublicAccess,
+  type PublicLink,
+  type SharedWithMeResponse,
+  type ShareResourceKind,
+} from "@saas/contracts/sharing";
 
 import type { RequestOptions, Transport } from "./transport.js";
 
@@ -224,6 +239,86 @@ export class FilesClient {
       await this.abortUpload(orgId, id).catch(() => undefined);
       throw err;
     }
+  }
+
+  // ---- Sharing (PW3) ----
+
+  private shared(orgId: string, kind: ShareResourceKind, id: string): string {
+    return `${this.base(orgId)}/${kind === "folder" ? "folders" : "documents"}/${encodeURIComponent(id)}`;
+  }
+
+  /** What the caller may do on a folder or document. */
+  async access(orgId: string, kind: ShareResourceKind, id: string, opts: RequestOptions = {}): Promise<PublicAccess> {
+    const r = await this.transport.request<{ access: PublicAccess }>({ method: "GET", path: `${this.shared(orgId, kind, id)}/access` }, opts);
+    return r.access;
+  }
+
+  /** Who has access (inherited grants say which folder they come from), the live links, and the caller's own access. Needs share rights. */
+  accessList(orgId: string, kind: ShareResourceKind, id: string, opts: RequestOptions = {}): Promise<AccessListResponse> {
+    return this.transport.request<AccessListResponse>({ method: "GET", path: `${this.shared(orgId, kind, id)}/grants` }, opts);
+  }
+
+  /** Share with a member (userId) or anyone by email; a second call changes their role. */
+  share(orgId: string, kind: ShareResourceKind, id: string, body: CreateGrantRequest, opts: RequestOptions = {}): Promise<GrantResponse> {
+    return this.transport.request<GrantResponse>({ method: "POST", path: `${this.shared(orgId, kind, id)}/grants`, body }, opts);
+  }
+
+  /** Remove a grant that sits on this folder or document. */
+  async unshare(orgId: string, kind: ShareResourceKind, id: string, grantId: string, opts: RequestOptions = {}): Promise<void> {
+    await this.transport.send({ method: "DELETE", path: `${this.shared(orgId, kind, id)}/grants/${encodeURIComponent(grantId)}` }, opts);
+  }
+
+  async listLinks(orgId: string, kind: ShareResourceKind, id: string, opts: RequestOptions = {}): Promise<PublicLink[]> {
+    const r = await this.transport.request<{ links: PublicLink[] }>({ method: "GET", path: `${this.shared(orgId, kind, id)}/links` }, opts);
+    return r.links;
+  }
+
+  /** A share link. The token is in this response only: build the URL to share from it now. */
+  createLink(orgId: string, kind: ShareResourceKind, id: string, body: CreateLinkRequest, opts: RequestOptions = {}): Promise<CreateLinkResponse> {
+    return this.transport.request<CreateLinkResponse>({ method: "POST", path: `${this.shared(orgId, kind, id)}/links`, body }, opts);
+  }
+
+  /** Turn a link off; it stops working on the next request. */
+  async revokeLink(orgId: string, kind: ShareResourceKind, id: string, linkId: string, opts: RequestOptions = {}): Promise<void> {
+    await this.transport.send({ method: "DELETE", path: `${this.shared(orgId, kind, id)}/links/${encodeURIComponent(linkId)}` }, opts);
+  }
+
+  listGuests(orgId: string, opts: RequestOptions = {}): Promise<ListGuestsResponse> {
+    return this.transport.request<ListGuestsResponse>({ method: "GET", path: `${this.base(orgId)}/guests` }, opts);
+  }
+
+  /** Remove a guest and every grant they hold in the org. */
+  async removeGuest(orgId: string, guestId: string, opts: RequestOptions = {}): Promise<void> {
+    await this.transport.send({ method: "DELETE", path: `${this.base(orgId)}/guests/${encodeURIComponent(guestId)}` }, opts);
+  }
+
+  /** What happened to a document, newest first. */
+  activity(orgId: string, docId: string, query: { cursor?: string; limit?: number } = {}, opts: RequestOptions = {}): Promise<ActivityResponse> {
+    return this.transport.request<ActivityResponse>(
+      { method: "GET", path: `${this.base(orgId)}/documents/${encodeURIComponent(docId)}/activity`, query: { cursor: query.cursor, limit: query.limit } },
+      opts,
+    );
+  }
+
+  /** Everything shared with the signed-in person, in any org. */
+  sharedWithMe(opts: RequestOptions = {}): Promise<SharedWithMeResponse> {
+    return this.transport.request<SharedWithMeResponse>({ method: "GET", path: "/v1/me/shared" }, opts);
+  }
+
+  /** Open a share link (no account needed): its document, or its folder's listing. */
+  openLink(token: string, query: { password?: string; folderId?: string } = {}, opts: RequestOptions = {}): Promise<LinkOpenResponse> {
+    return this.transport.request<LinkOpenResponse>(
+      { method: "GET", path: `/v1/l/${encodeURIComponent(token)}`, query: { folderId: query.folderId } },
+      query.password ? withHeaders(opts, { [LINK_PASSWORD_HEADER]: query.password }) : opts,
+    );
+  }
+
+  /** A share link's PDF (for a folder link, name the document inside it). */
+  linkContent(token: string, query: { password?: string; documentId?: string } = {}, opts: RequestOptions = {}): Promise<Response> {
+    return this.transport.send(
+      { method: "GET", path: `/v1/l/${encodeURIComponent(token)}/content`, query: { documentId: query.documentId } },
+      query.password ? withHeaders(opts, { [LINK_PASSWORD_HEADER]: query.password }) : opts,
+    );
   }
 
   // ---- Trash and quota ----

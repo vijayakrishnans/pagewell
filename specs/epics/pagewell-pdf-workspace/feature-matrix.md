@@ -16,7 +16,7 @@ reason; `⛔ Blocked` is added beside the status when a row waits on
 | Edit existing text | Yes | Thin | upstream roadmap | deferred: not built here (design §5) | |
 | Office ⇄ PDF | Yes | Missing | PW11 (LibreOffice container, flag-gated) | planned | |
 | Accounts, cloud storage, versions | Yes | No | PW2 | verified (stage, 2026-11-28) | `tooling/e2e/drive-stage.mjs`; `tests/editor-e2e` › cloud-live, cloud; `tests/files-worker`; `tests/db` › files |
-| Org sharing, links, guests | Yes | No | PW3 | in_progress (rules and data: PW-16; API: PW-17) | `tests/policy-engine` › permission matrix; `tests/db` › files-sharing; `tests/files-worker` › sharing |
+| Org sharing, links, guests | Yes | No | PW3 | in_progress (rules and data: PW-16; API: PW-17; edge, SDK, invitations: PW-19) | `tests/policy-engine` › permission matrix; `tests/db` › files-sharing; `tests/files-worker` › sharing |
 | Comments synced across people | Yes | Local only | PW5 | planned | |
 | Review requests | Yes | No | PW5 | planned | |
 | Request e-signatures | Yes (Acrobat Sign) | No | PW6 (simple e-signature) | planned | |

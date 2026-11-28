@@ -1,0 +1,34 @@
+# Task PW-19 (milestone PW3), minted in Orunbase with this contract inline.
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: PW-19
+spec:
+  goal: api-edge routes sharing, guests and Shared with me (forwarding the verified email) and public share links rate-limited by address; the SDK covers sharing; a guest gets a files.shared email through notifications-worker.
+  affects:
+    - default/pagewell/api-edge
+    - default/pagewell/api-edge-tests
+    - default/pagewell/files-worker
+    - default/pagewell/files-worker-tests
+    - default/pagewell/notifications-worker
+    - default/pagewell/notifications-worker-tests
+    - default/pagewell/sdk
+    - default/pagewell/contracts
+    - apps/api-edge/**
+    - apps/files-worker/**
+    - apps/notifications-worker/**
+    - packages/sdk/**
+    - packages/contracts/**
+    - tests/api-edge/**
+    - tests/files-worker/**
+    - tests/notifications-worker/**
+    - pnpm-lock.yaml
+    - specs/epics/pagewell-pdf-workspace/**
+    - ai/context/**
+    - tasks/**
+  deps: [PW-18]
+  doneWhen:
+    - On stage, /v1/l/{token} opens a link with no session and a revoked one is 404
+    - Guest grants work through the edge (x-actor-email forwarded); /v1/me/shared answers
+    - Sharing with a guest queues a files.shared email; tests cover the template and when it is sent
+  gates: []

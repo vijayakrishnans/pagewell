@@ -1,6 +1,7 @@
 import { LINK_MAX_DAYS, LINK_PASSWORD_MAX, LINK_PASSWORD_MIN, type AccessListResponse, type DriveRole, type LinkRole, type SharedItem } from "@saas/contracts/sharing";
 import type { Grant, Guest, ResourceRef, SharingRepository } from "@saas/db/files";
 import type { Uuid } from "@saas/db/ids";
+import { buildIdempotencyKey, enqueueNotification } from "@saas/notifications-client";
 import { membershipFacts, type Actor } from "../auth.js";
 import { positiveInt, type Ctx } from "../context.js";
 import { hashPassword, newLinkToken, sha256Hex } from "../crypto.js";
@@ -122,6 +123,25 @@ export async function createGrant(ctx: Ctx, request: Request, r: ResourceRef): P
     created ? `Shared ${what(r, resourceName)} with ${principal.label} as ${role}` : `Changed ${principal.label} on ${what(r, resourceName)} from ${previousRole ?? "?"} to ${role}`,
     { grantId: toPublic("grt", grant.id), resource: pub(r), principalKind: principal.kind, role, previousRole },
   );
+  // A guest hears about it by email (unless the sharer said not to); a member finds it in
+  // Shared with me. Best-effort: a failed send never fails the share.
+  const notify = body?.notify !== false;
+  if (notify && principal.kind === "guest" && (created || previousRole !== role)) {
+    const message = typeof body?.message === "string" ? body.message.trim().slice(0, 500) : "";
+    const consoleUrl = ctx.env.CONSOLE_URL && /^https:\/\/[^\s/]+$/.test(ctx.env.CONSOLE_URL) ? ctx.env.CONSOLE_URL : null;
+    await enqueueNotification(
+      ctx.env,
+      { internalActor: "files-worker", actorSubjectType: ctx.actor.subjectType, actorSubjectId: ctx.actor.subjectId, requestId: ctx.requestId },
+      {
+        orgId: ctx.orgId,
+        category: "product",
+        templateKey: "files.shared",
+        templateData: { role, resourceKind: r.kind, resourceName, message: message || null, openUrl: consoleUrl ? `${consoleUrl}/shared` : null },
+        recipient: { channel: "email", address: principal.label },
+        idempotencyKey: buildIdempotencyKey("files.shared", toPublic("grt", grant.id), role, String(grant.updatedAt.getTime())),
+      },
+    ).catch(() => undefined);
+  }
   const [described] = await describeGrants(ctx, r, [grant]);
   return ok({ grant: described }, ctx.requestId, created ? 201 : 200);
 }

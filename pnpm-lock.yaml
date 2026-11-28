@@ -172,6 +172,9 @@ importers:
       '@saas/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@saas/notifications-client':
+        specifier: workspace:*
+        version: link:../../packages/notifications-client
       '@saas/shared':
         specifier: workspace:*
         version: link:../../packages/shared

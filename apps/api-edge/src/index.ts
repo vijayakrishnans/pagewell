@@ -6,7 +6,7 @@ import { handlePreflight, applyCorsHeaders } from "./cors";
 import { isAuthRoute, handleAuthRoute } from "./auth-facade";
 import { isOrgRoute, handleOrgRoute } from "./org-facade";
 import { isProjectRoute, handleProjectRoute } from "./project-facade";
-import { isFilesRoute, handleFilesRoute } from "./files-facade";
+import { isFilesRoute, handleFilesRoute, isShareLinkRoute, handleShareLinkRoute } from "./files-facade";
 import { isAuditRoute, handleAuditRoute } from "./audit-facade";
 import { isConfigRoute, handleConfigRoute } from "./config-facade";
 import { isWebhooksRoute, handleWebhooksRoute } from "./webhooks-facade";
@@ -69,6 +69,9 @@ export default {
       response = await handleMeteringRoute(request, env, requestId, url.pathname);
     } else if (isBillingRoute(url.pathname)) {
       response = await handleBillingRoute(request, env, requestId, url.pathname);
+    } else if (isShareLinkRoute(url.pathname)) {
+      // Public share links (no session): the token is the key, checked in files-worker.
+      response = await handleShareLinkRoute(request, env, requestId, url.pathname);
     } else if (isFilesRoute(url.pathname)) {
       response = await handleFilesRoute(request, env, requestId, url.pathname);
     } else if (isProjectRoute(url.pathname)) {

@@ -58,7 +58,8 @@ export type RouteFamily =
   | "audit"
   | "notifications"
   | "integrations"
-  | "files";
+  | "files"
+  | "links";
 
 interface BucketLimits {
   /** Bucket capacity (max tokens). */
@@ -127,6 +128,13 @@ const LIMITS: Record<RouteFamily, FamilyConfig> = {
   files: {
     identity: { limit: 300, windowSec: 60 },
     org: { limit: 1500, windowSec: 60 },
+  },
+  // Public share links (PW3): no account, so the identity is the client
+  // address. Tight enough to blunt password guessing on a protected link,
+  // loose enough for a viewer paging through a folder.
+  links: {
+    identity: { limit: 60, windowSec: 60 },
+    org: { limit: 600, windowSec: 60 },
   },
 };
 
