@@ -13,6 +13,9 @@ import type {
 
 export { POLICY_VERSION } from "@saas/contracts/policy";
 import { POLICY_VERSION } from "@saas/contracts/policy";
+import { decideFiles, FILES_RESOURCE_ACTIONS, floorRole, type FilesAccessFacts } from "./files.js";
+
+export * from "./files.js";
 
 const ORG_ROLE_PERMISSIONS: Record<OrganizationRole, readonly string[]> = {
   owner: [
@@ -33,8 +36,10 @@ const ORG_ROLE_PERMISSIONS: Record<OrganizationRole, readonly string[]> = {
     "project.create",
     "project.list",
     "files.read",
+    "files.comment",
     "files.write",
     "files.delete",
+    "files.share",
     "project.read",
     "project.update",
     "project.delete",
@@ -79,8 +84,10 @@ const ORG_ROLE_PERMISSIONS: Record<OrganizationRole, readonly string[]> = {
     "project.create",
     "project.list",
     "files.read",
+    "files.comment",
     "files.write",
     "files.delete",
+    "files.share",
     "project.read",
     "project.update",
     "project.delete",
@@ -110,8 +117,10 @@ const ORG_ROLE_PERMISSIONS: Record<OrganizationRole, readonly string[]> = {
     "project.create",
     "project.list",
     "files.read",
+    "files.comment",
     "files.write",
     "files.delete",
+    "files.share",
     "project.read",
     "project.update",
     "environment.create",
@@ -233,8 +242,10 @@ const ALL_KNOWN_ACTIONS: ReadonlySet<string> = new Set([
   "project.create",
   "project.list",
   "files.read",
+  "files.comment",
   "files.write",
   "files.delete",
+  "files.share",
   "project.read",
   "project.update",
   "project.delete",
@@ -261,6 +272,28 @@ const ALL_KNOWN_ACTIONS: ReadonlySet<string> = new Set([
   "organization.integration.token.issue",
   "project.repo_link.write",
 ]);
+
+function filesAccessFacts(attributes: Record<string, unknown> | undefined): FilesAccessFacts | null {
+  const f = attributes?.files;
+  if (!isRecord(f)) return null;
+  const principal = f.principal;
+  if (principal !== "member" && principal !== "guest" && principal !== "link") return null;
+  const grants = Array.isArray(f.grants) ? f.grants.filter((g): g is FilesAccessFacts["grants"][number] => typeof g === "string") : [];
+  const link = f.link === "viewer" || f.link === "commenter" ? f.link : null;
+  return { principal, grants, link };
+}
+
+/** The org role with the widest drive floor among the person's facts in this org. */
+function bestOrgRole(facts: MembershipFact[]): string | null {
+  let best: string | null = null;
+  const ranks: Record<string, number> = { editor: 3, commenter: 2, viewer: 1 };
+  const rank = (r: string | null) => ranks[floorRole(r) ?? ""] ?? 0;
+  for (const f of facts) {
+    if (f.scope.kind !== "organization") continue;
+    if (best === null || rank(f.role) > rank(best)) best = f.role;
+  }
+  return best;
+}
 
 function isOrgRole(role: string): role is OrganizationRole {
   return VALID_ORG_ROLES.has(role);
@@ -314,6 +347,16 @@ export function authorize(input: AuthorizationRequest): AuthorizationResponse {
   const relevantFacts = context.memberships.filter(isRoleAssignmentFact).filter(
     (f) => f.scope.orgId === orgId,
   );
+
+  // One folder or document in the drive (PW3): the org role is the floor, the grants and the
+  // link files-worker found are the rest (./files.ts). Guests and link holders have no
+  // membership, so this comes before the membership check.
+  const filesFacts = filesAccessFacts(context.attributes);
+  if (resource.kind === "files" && filesFacts && (FILES_RESOURCE_ACTIONS as readonly string[]).includes(action)) {
+    const orgRole = bestOrgRole(relevantFacts);
+    const decision = decideFiles(action, orgRole, filesFacts);
+    return decision.allow ? allow(decision.reason, orgId) : deny(decision.reason, orgId);
+  }
 
   if (relevantFacts.length === 0) {
     return deny("no_matching_role", orgId, projectId);

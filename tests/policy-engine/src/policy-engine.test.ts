@@ -686,7 +686,7 @@ describe("listEffectivePermissions", () => {
     expect(result.derivedScope.orgId).toBe("org_1");
 
     const allowed = result.permissions.filter((p) => p.allow);
-    expect(allowed.length).toBe(34);
+    expect(allowed.length).toBe(36); // + files.comment, files.share (PW3)
   });
 
   it("returns limited permissions for viewer", () => {
@@ -1027,13 +1027,13 @@ describe("files actions (Pagewell drive, PW-10)", () => {
   });
 
   it.each([
-    ["owner", ["files.read", "files.write", "files.delete"]],
-    ["admin", ["files.read", "files.write", "files.delete"]],
-    ["builder", ["files.read", "files.write", "files.delete"]],
+    ["owner", ["files.read", "files.comment", "files.write", "files.delete", "files.share"]],
+    ["admin", ["files.read", "files.comment", "files.write", "files.delete", "files.share"]],
+    ["builder", ["files.read", "files.comment", "files.write", "files.delete", "files.share"]],
     ["viewer", ["files.read"]],
     ["billing_admin", []],
   ] as const)("%s may %j in its own org", (role, allowed) => {
-    for (const action of ["files.read", "files.write", "files.delete"]) {
+    for (const action of ["files.read", "files.comment", "files.write", "files.delete", "files.share"]) {
       const result = authorize(filesReq(action, "org_1", [orgFact(role, "org_1")]));
       expect({ action, allow: result.allow }).toEqual({ action, allow: (allowed as readonly string[]).includes(action) });
     }
