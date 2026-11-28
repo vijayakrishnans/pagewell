@@ -59,7 +59,8 @@ export type RouteFamily =
   | "notifications"
   | "integrations"
   | "files"
-  | "links";
+  | "links"
+  | "jobs";
 
 interface BucketLimits {
   /** Bucket capacity (max tokens). */
@@ -134,6 +135,12 @@ const LIMITS: Record<RouteFamily, FamilyConfig> = {
   // loose enough for a viewer paging through a folder.
   links: {
     identity: { limit: 60, windowSec: 60 },
+    org: { limit: 600, windowSec: 60 },
+  },
+  // Heavy jobs (PW4): a person polls a running job's status, so reads need room; starting jobs
+  // is also capped by the plan's concurrency in pdf-jobs-worker.
+  jobs: {
+    identity: { limit: 120, windowSec: 60 },
     org: { limit: 600, windowSec: 60 },
   },
 };
