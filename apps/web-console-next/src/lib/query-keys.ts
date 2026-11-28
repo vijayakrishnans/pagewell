@@ -31,6 +31,8 @@ export const qk = {
   driveFolder: (orgId: string, folderId: string | null) => ["driveFolder", orgId, folderId ?? "root"] as const,
   driveTrash: (orgId: string) => ["driveTrash", orgId] as const,
   driveQuota: (orgId: string) => ["driveQuota", orgId] as const,
+  envelopes: (orgId: string) => ["envelopes", orgId] as const,
+  envelopeEvidence: (orgId: string, envelopeId: string) => ["envelopeEvidence", orgId, envelopeId] as const,
   driveVersions: (orgId: string, docId: string) => ["driveVersions", orgId, docId] as const,
   // Sharing (PW3).
   driveAccess: (orgId: string, kind: string, id: string) => ["driveAccess", orgId, kind, id] as const,

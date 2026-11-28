@@ -356,3 +356,112 @@ test("review: comments show as text, someone else's lease turns Save off, taking
   await expect(page.locator("#newer")).toBeVisible();
   await expect(page.locator("#newer-text")).toHaveText("bea@example.com saved version 3.");
 });
+
+// ---- E-sign (PW6): the signer's page, against a faked signing API ----
+
+const STOKEN = "s".repeat(43);
+const sbase = `${API}/v1/s/${STOKEN}`;
+
+async function fakeSigning(context, { yourTurn = true, gone = false } = {}) {
+  const seen = { codes: 0, verifies: [], submitted: null, declined: null };
+  const session = {
+    envelope: { title: 'Generated <img src=x onerror="window.pwned=1"> agreement', message: "Please sign by Friday", from: "alice@example.com", orderMode: "parallel", expiresAt: null },
+    signer: { name: "Ben Example", email: "ben@example.com", status: "notified", verified: false },
+    yourTurn,
+    documents: [{ documentId: DOC, name: "Agreement.pdf", pageCount: 5 }],
+    fields: [
+      { id: "fdl_sig", documentId: DOC, page: 5, rect: [72, 600, 200, 40], kind: "signature", required: true, label: null },
+      { id: "fdl_ini", documentId: DOC, page: 1, rect: [500, 700, 60, 30], kind: "initials", required: true, label: null },
+      { id: "fdl_date", documentId: DOC, page: 5, rect: [300, 610, 120, 20], kind: "date", required: true, label: null },
+      { id: "fdl_ok", documentId: DOC, page: 5, rect: [72, 500, 14, 14], kind: "checkbox", required: false, label: "I have read the terms" },
+    ],
+    others: [{ name: "Ann Example", status: "signed" }],
+  };
+  await context.route(`${sbase}**`, async (route) => {
+    const req = route.request();
+    if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors(req) });
+    const path = new URL(req.url()).pathname.replace(`/v1/s/${STOKEN}`, "");
+    if (gone) return route.fulfill(json(req, { error: { code: "not_found", message: "Not found", details: {} } }, 404));
+    if (path === "" && req.method() === "GET") return route.fulfill(json(req, { data: { session } }));
+    if (path === "/code") return seen.codes++, route.fulfill(json(req, { data: { sent: true } }));
+    if (path === "/verify") {
+      const { code } = JSON.parse(req.postData() ?? "{}");
+      seen.verifies.push(code);
+      return code === "424242" ? route.fulfill(json(req, { data: { verified: true } })) : route.fulfill(json(req, { error: { code: "validation_failed", message: "wrong", details: { attemptsLeft: 4 } } }, 422));
+    }
+    if (path === `/documents/${DOC}`) return route.fulfill({ status: 200, contentType: "application/pdf", headers: cors(req), body: fixturePdf(5) });
+    if (path === "/submit") return (seen.submitted = JSON.parse(req.postData() ?? "{}")), route.fulfill(json(req, { data: { signed: true, envelopeStatus: "completing" } }));
+    if (path === "/decline") return (seen.declined = JSON.parse(req.postData() ?? "{}")), route.fulfill(json(req, { data: { declined: true } }));
+    return route.fulfill(json(req, { error: { code: "not_found", message: "Not found", details: {} } }, 404));
+  });
+  return seen;
+}
+
+test("signing: a code, the document as sent, a drawn signature and typed initials, consent, signed", async ({ context, page }) => {
+  const seen = await fakeSigning(context);
+  await page.goto(`/s/${STOKEN}`);
+  await expect(page.locator("#sign-title")).toHaveText('Generated <img src=x onerror="window.pwned=1"> agreement', { timeout: 150_000 });
+  expect(await page.evaluate(() => window.pwned)).toBeUndefined();
+  await expect(page.locator("#sign-from")).toHaveText("From alice@example.com to Ben Example <ben@example.com>");
+  await expect(page.locator("#save")).toBeHidden();
+
+  await page.getByRole("button", { name: "Email me a code" }).click();
+  const code = page.getByLabel("Six-digit code");
+  await code.fill("000000");
+  await page.getByRole("button", { name: "Verify" }).click();
+  await expect(page.locator("#sign-body")).toContainText("4 tries left");
+  await code.fill("424242");
+  await page.getByRole("button", { name: "Verify" }).click();
+  await expect(page.locator("#status")).toContainText("Agreement.pdf", { timeout: 30_000 });
+  expect(seen.codes).toBe(1);
+  expect(seen.verifies).toEqual(["000000", "424242"]);
+
+  // Draw the signature; the initials stay typed (from the name); the date is the server's.
+  const sig = page.locator('[data-field="fdl_sig"]');
+  await sig.getByRole("button", { name: "Draw" }).click();
+  const pad = sig.locator("canvas");
+  const box = await pad.boundingBox();
+  await page.mouse.move(box.x + 20, box.y + 60);
+  await page.mouse.down();
+  for (let i = 1; i <= 12; i++) await page.mouse.move(box.x + 20 + i * 15, box.y + 60 + (i % 2 ? -25 : 25));
+  await page.mouse.up();
+  await expect(page.locator('[data-field="fdl_ini"] input')).toHaveValue("BE");
+  await page.getByLabel("I have read the terms").check();
+
+  await page.getByRole("button", { name: "Sign", exact: true }).click();
+  await expect(page.locator("#sign-body")).toContainText("Tick the box");
+  expect(seen.submitted).toBeNull();
+  await page.locator("#sign-consent").check();
+  await page.getByRole("button", { name: "Sign", exact: true }).click();
+  await expect(page.locator("#sign-body")).toContainText("You've signed");
+  expect(seen.submitted.consent).toBe(true);
+  const byField = Object.fromEntries(seen.submitted.values.map((v) => [v.fieldId, v]));
+  expect(Object.keys(byField).sort()).toEqual(["fdl_ini", "fdl_ok", "fdl_sig"]);
+  expect(byField.fdl_ini.text).toBe("BE");
+  expect(byField.fdl_ok.checked).toBe(true);
+  expect(Buffer.from(byField.fdl_sig.imagePng, "base64").subarray(1, 4).toString("latin1")).toBe("PNG");
+});
+
+test("signing: a spent link says so; a signer waiting for their turn is told; declining sends the reason", async ({ browser }) => {
+  for (const [opts, want] of [[{ gone: true }, "doesn't work any more"], [{ yourTurn: false }, "Others sign before you"]]) {
+    const context = await browser.newContext();
+    await fakeSigning(context, opts);
+    const page = await context.newPage();
+    await page.goto(`/s/${STOKEN}`);
+    await expect(page.locator("body")).toContainText(want, { timeout: 150_000 });
+    await context.close();
+  }
+  const context = await browser.newContext();
+  const seen = await fakeSigning(context);
+  const page = await context.newPage();
+  await page.goto(`/s/${STOKEN}`);
+  await page.getByRole("button", { name: "Email me a code" }).click({ timeout: 150_000 });
+  await page.getByLabel("Six-digit code").fill("424242");
+  await page.getByRole("button", { name: "Verify" }).click();
+  await page.getByRole("button", { name: "Decline", exact: true }).click();
+  await page.getByLabel("Why you are declining (optional)").fill("Generated reason");
+  await page.getByRole("button", { name: "Decline to sign" }).click();
+  await expect(page.locator("#sign-body")).toContainText("You declined");
+  expect(seen.declined).toEqual({ reason: "Generated reason" });
+  await context.close();
+});
