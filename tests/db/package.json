@@ -19,7 +19,8 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@saas/db": "workspace:*"
+    "@saas/db": "workspace:*",
+    "@saas/shared": "workspace:*"
   },
   "jest": {
     "preset": "ts-jest/presets/default-esm",
@@ -31,7 +32,8 @@
       "^@saas/db$": "<rootDir>/../../packages/db/src/index.ts",
       "^@saas/db/manifest$": "<rootDir>/../../packages/db/src/manifest.ts",
       "^@saas/db/types$": "<rootDir>/../../packages/db/src/types.ts",
-      "^@saas/db/(.*)$": "<rootDir>/../../packages/db/src/$1/index.ts"
+      "^@saas/db/(.*)$": "<rootDir>/../../packages/db/src/$1/index.ts",
+      "^@saas/shared/(.*)$": "<rootDir>/../../packages/shared/src/$1.ts"
     },
     "transform": {
       "^.+\\.ts$": [

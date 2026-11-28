@@ -26,7 +26,8 @@
     "./idempotency": "./src/idempotency.ts",
     "./files": "./src/files.ts",
     "./sharing": "./src/sharing.ts",
-    "./jobs": "./src/jobs.ts"
+    "./jobs": "./src/jobs.ts",
+    "./review": "./src/review.ts"
   },
   "scripts": {
     "build": "tsc --project tsconfig.build.json",

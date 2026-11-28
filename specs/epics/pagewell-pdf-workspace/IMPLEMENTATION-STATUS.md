@@ -10,7 +10,7 @@ the code departed from `design.md`.
 | PW2 — drive | ✅ done 2026-11-28: data layer (PW-9), files worker (PW-10), R2 buckets (PW-11), api-edge facade (PW-12), the drive in the console (PW-13), the editor opens and saves drive documents (PW-14), files worker live on stage and prod (PW-15). Verified on stage: 44 API checks and the real editor (see "PW2 on stage") | #11–#18 |
 | PW3 — orgs and sharing | ✅ done 2026-11-28: sharing data and the access rules with the permission matrix (PW-16), files-worker enforces sharing with links, guests, activity and audit (PW-17), team profile on (PW-18), sharing at the edge, in the SDK and by email (PW-19), sharing in the console (PW-20), the share-link viewer and the stage run (PW-21). Verified on stage: 47 sharing checks and the real editor on a link (see "PW3 on stage") | #19–#25 |
 | PW4 — heavy jobs | in progress: the runner image (PW-23, #27), pdf-jobs-worker, its data, the edge and the SDK (PW-24, #28, live on stage without a runner), tools in the console and Print in the editor (PW-25). Running jobs waits on the Containers grant (WAITING W4) | #28 |
-| PW5 — review | | |
+| PW5 — review | in progress: review data and the anchor rule (PW-28) | |
 | PW6 — e-sign | | |
 | PW7 — remote MCP | | |
 | PW8 — chat with documents | | |
@@ -267,6 +267,20 @@ multi-org by the brief, so PW3 turns the team profile on everywhere. What change
   browser's own print.
 - **Without a runner** both say so ("Heavy tools aren't available here yet", "Printing from the
   server isn't available yet") instead of failing silently.
+
+### D20 — Review data and anchors as built (PW-28)
+- **Tables** (migration `240_review_core`, context `review`): `review_threads` (anchor JSON,
+  version, open/resolved/outdated), `review_comments` (author, body, mentions; a deleted comment
+  is blanked and keeps its place), `review_requests` and `review_request_reviewers` (by email; a
+  request closes when every reviewer decided).
+- **The server is the source of truth.** The editor's bridge emits no annotation-changed event,
+  so the editor will not sync from the PDF: it shows server comments and sends new ones to the
+  server (PW-30). This replaces the design's `annotationChanged` sync.
+- **Anchors** (`packages/shared/src/anchors.ts`): a thread is carried to a newer version when its
+  page still exists and its quote is still on that page (or, with no quote, the page's text is
+  unchanged), else marked `outdated`, never moved to another page. It compares the text the editor
+  stores with every save; without stored text, a thread is kept while its page exists. Carrying is
+  conditional on the version it was at, so two readers carry it once.
 
 ## OWASP review of PW2–PW4 (PW-26, 2026-11-28)
 Asked for by the user for every build from now on; each PR states the areas it touches.
