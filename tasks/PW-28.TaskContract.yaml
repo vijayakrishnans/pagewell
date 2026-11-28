@@ -1,0 +1,27 @@
+# Task PW-28 (milestone PW5), minted in Orunbase with this contract inline.
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: PW-28
+spec:
+  goal: Migration 240_review_core with its repository, the review wire types, and the anchor rule that carries a comment to a newer version or marks it outdated, never moving it.
+  affects:
+    - default/pagewell/db
+    - default/pagewell/db-tests
+    - default/pagewell/db-migrate
+    - default/pagewell/contracts
+    - default/pagewell/shared
+    - packages/db/**
+    - packages/contracts/**
+    - packages/shared/**
+    - tests/db/**
+    - pnpm-lock.yaml
+    - specs/epics/pagewell-pdf-workspace/**
+    - ai/context/**
+    - tasks/**
+  deps: [PW-27]
+  doneWhen:
+    - Migration 240 applies on stage and prod; every review table carries org_id
+    - Repository tests cover threads, author-only edits, statuses, carrying once, review requests, reminders and isolation
+    - Anchor tests show a quote still on its page is carried; a quote gone or moved, or a page gone, is outdated
+  gates: []

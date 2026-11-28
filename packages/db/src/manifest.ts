@@ -219,5 +219,14 @@ export const manifest: MigrationManifest = {
       description:
         "Share-link password lockout (PW-26) — wrong-password count and a lock time on files_links: 10 wrong passwords in a row lock a link for 15 minutes",
     },
+    {
+      id: "240_review_core",
+      context: "review",
+      path: "240_review_core/up.sql",
+      checksum:
+        "c5d998588108a6b27bc3409e3be2ea3c0bd8d91839f4a3dfb35b58aaf8b09d35",
+      description:
+        "Pagewell review (PW5) — comment threads anchored on a page of a version (carried forward or marked outdated), their comments with mentions, review requests and their reviewers",
+    },
   ],
 };

@@ -94,7 +94,8 @@ PW0 mls_QNVAF2QE · PW1 mls_3F6D2YPV · PW2 mls_3QY0GJGR · PW3 mls_48B1ECZE · 
 | PW-25 | PW4 | #29 (121ea28), #30 | done: console Run a tool + jobs tray, editor Print |
 | PW-23 | PW4 | #27 (d681efc) | done: pdf-runner image + CI |
 | PW-26 | — | #31 (021dbe3) | done: OWASP hardening (headers, link lockout, thumbnail bytes, pinned images) |
-| PW-27 | — | — | in progress: console Next 15.5.29 / OpenNext 1.20.19 (critical advisories) |
+| PW-27 | — | #32 (07ee0e9) | done: console Next 15.5.29 / OpenNext 1.20.19; audit 86→5; stage checks green |
+| PW-28 | PW5 | — | in progress: review data + anchor rule |
 
 ## Measured budgets
 

@@ -7,7 +7,8 @@
     ".": "./src/index.ts",
     "./ids": "./src/ids.ts",
     "./errors": "./src/errors.ts",
-    "./r2-keys": "./src/r2-keys.ts"
+    "./r2-keys": "./src/r2-keys.ts",
+    "./anchors": "./src/anchors.ts"
   },
   "scripts": {
     "build": "tsc --project tsconfig.build.json",
