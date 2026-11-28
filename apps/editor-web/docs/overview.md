@@ -26,3 +26,11 @@ Static Assets take files up to 25 MiB. The raw wasm is larger, so it is shipped 
 
 `window.pagewell` exposes `editor` (`PagewellEditor`: `open`, `save`, `isDirty`, `automation`,
 `undo`, `canUndo`) and the page's own `open`, `save` and `automation`, for tests.
+
+## Review (PW5)
+
+For a drive document the editor shows a side panel (`public/review.js`): the document's comment
+threads, a form to comment on a page, replies, resolve and reopen, who else is here, and the edit
+lease. It joins the document's room in review-worker over a WebSocket with a single-use ticket
+(`POST …/room/ticket`), reconnecting when it drops. The first person who may edit holds the lease;
+Save is off for the others until it is free. Comments are always rendered as text.

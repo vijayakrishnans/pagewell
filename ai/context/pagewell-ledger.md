@@ -97,6 +97,7 @@ PW0 mls_QNVAF2QE · PW1 mls_3F6D2YPV · PW2 mls_3QY0GJGR · PW3 mls_48B1ECZE · 
 | PW-27 | — | #32 (07ee0e9) | done: console Next 15.5.29 / OpenNext 1.20.19; audit 86→5; stage checks green |
 | PW-28 | PW5 | #33 (911597c) | done: review data + anchor rule |
 | PW-29 | PW5 | #34 (347fc56) | done: review-worker + DocRoom live on stage; review-stage.mjs 23 green (real WebSockets) |
+| PW-30 | PW5 | — | in progress: editor review panel, presence, lease; two-browser test |
 
 ## Measured budgets
 

@@ -42,7 +42,8 @@ const csp = (api: string | null) => [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' blob: data:",
   "font-src 'self'",
-  api ? `connect-src 'self' ${api}` : "connect-src 'self'",
+  // The drive API, and its WebSocket for the document's live room (PW5).
+  api ? `connect-src 'self' ${api} ${api.replace(/^http/, "ws")}` : "connect-src 'self'",
   "worker-src 'self' blob:",
   "frame-ancestors 'none'",
   "base-uri 'none'",

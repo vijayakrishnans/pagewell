@@ -28,17 +28,16 @@ async function call(token, method, path, { body, headers = {}, json } = {}) {
 }
 const data = async (res) => (await res.json()).data;
 
-async function signIn() {
-  const email = `pw-e2e-editor-${Date.now().toString(36)}@example.com`;
+async function signIn(email = `pw-e2e-editor-${Date.now().toString(36)}@example.com`) {
   const s = await data(await call(null, "POST", "/v1/auth/login/start", { json: { email } }));
   expect(s.delivery.mode, "this environment must return login codes inline").toBe("local_debug");
   const done = await data(await call(null, "POST", "/v1/auth/login/complete", { json: { challengeId: s.challengeId, code: s.delivery.code } }));
   const orgs = (await data(await call(done.token, "GET", "/v1/organizations"))).organizations;
-  if (orgs.length) return { token: done.token, orgId: orgs[0].id };
+  if (orgs.length) return { token: done.token, orgId: orgs[0].id, email };
   // Team profile (PW-18): a new user makes their first org.
   const slug = `live-${Date.now().toString(36)}`;
   const created = await data(await call(done.token, "POST", "/v1/organizations", { json: { name: "Live", slug } }));
-  return { token: done.token, orgId: created.organization.id };
+  return { token: done.token, orgId: created.organization.id, email };
 }
 
 test("the real editor opens a drive document, saves v2, survives a stale save by reloading, and v1 restores", async ({ context, page }) => {
@@ -126,4 +125,57 @@ test("a share link opens the real document in the real viewer, view only; turned
   expect((await call(token, "DELETE", `${A}/documents/${doc.id}/links/${link.id}`)).status).toBe(204);
   await page.reload();
   await expect(page.locator("#status")).toContainText("doesn't work any more", { timeout: 150_000 });
+});
+
+test("two people in one document: one holds the edit lease, comments arrive live, a save offers a reload, and leaving hands the lease over", async ({ browser }) => {
+  const owner = await signIn();
+  const second = await signIn(`pw-e2e-second-${Date.now().toString(36)}@example.com`);
+  const A = `/v1/organizations/${owner.orgId}`;
+  let res = await call(owner.token, "POST", `${A}/documents?name=Together.pdf`, { body: fixturePdf(4), headers: { "content-type": "application/pdf", "x-pagewell-page-count": "4" } });
+  expect(res.status).toBe(201);
+  const doc = (await data(res)).document;
+  // The second person is shared the document as an editor.
+  res = await call(owner.token, "POST", `${A}/documents/${doc.id}/grants`, { json: { email: second.email, role: "editor", notify: false } });
+  expect(res.status).toBe(201);
+
+  // Each opens the editor in their own browser, with their own session (what the console hands over).
+  async function open(who) {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    await page.addInitScript(([apiBase, orgId, token]) => sessionStorage.setItem("pagewell.session", JSON.stringify({ token, apiBase, orgId })), [API, owner.orgId, who.token]);
+    await page.goto(`/edit/${doc.id}?org=${owner.orgId}`);
+    await page.waitForFunction(() => window.pagewell?.review, null, { timeout: 150_000 });
+    return { context, page };
+  }
+  const one = await open(owner);
+  await expect(one.page.locator("#save")).toBeEnabled({ timeout: 20_000 });
+  const two = await open(second);
+
+  // The owner holds the lease: the second person reads and comments, and cannot save.
+  await expect(two.page.locator("#lease")).toContainText(`${owner.email} is editing`, { timeout: 20_000 });
+  await expect(two.page.locator("#save")).toBeDisabled();
+  await expect(two.page.locator("#presence")).toContainText(`${owner.email} (editing)`);
+  await expect(one.page.locator("#presence")).toContainText(second.email);
+
+  // A comment from the second person appears for the owner without a reload, and a reply comes back.
+  await two.page.locator("#comment-page").fill("2");
+  await two.page.locator("#comment-body").fill("Generated comment from the second browser.");
+  await two.page.locator("#comment-form").getByRole("button", { name: "Comment" }).click();
+  const onOwner = one.page.locator(".thread", { hasText: "Generated comment from the second browser." });
+  await expect(onOwner).toBeVisible({ timeout: 20_000 });
+  await onOwner.locator("textarea").fill("Seen, thanks.");
+  await onOwner.getByRole("button", { name: "Reply" }).click();
+  await expect(two.page.locator(".thread", { hasText: "Seen, thanks." })).toBeVisible({ timeout: 20_000 });
+
+  // The owner saves; the second person is offered the new version.
+  await one.page.evaluate(() => window.pagewell.automation({ tool: "page_delete", args: { pages: [4] } }));
+  await one.page.locator("#save").click();
+  await expect(one.page.locator("#status")).toContainText("Saved version 2");
+  await expect(two.page.locator("#newer-text")).toHaveText(`${owner.email} saved version 2.`, { timeout: 20_000 });
+
+  // The owner leaves: the lease is free, and the second person's editor takes it.
+  await one.context.close();
+  await expect(two.page.locator("#save")).toBeEnabled({ timeout: 20_000 });
+  await expect(two.page.locator("#lease")).toBeHidden();
+  await two.context.close();
 });

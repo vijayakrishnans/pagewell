@@ -23,6 +23,8 @@ const canvas = $("editor");
 
 let fileName = "document.pdf";
 let fileHandle = null;
+/** The review panel and edit lease (review.js), for a drive document. */
+let review = null;
 /** Set when the open document lives in the drive: saves go there instead of to disk. */
 let cloud = null;
 /** Set on a share link: nothing is saved, and a download is offered only if the link allows it. */
@@ -46,7 +48,7 @@ probe.getExtension("WEBGL_lose_context")?.loseContext();
 
 await init();
 const editor = await PagewellEditor.mount("editor");
-window.pagewell = { editor, open: openBytes, save: saveBytes, automation, docId, get cloud() { return cloud; } };
+window.pagewell = { editor, open: openBytes, save: saveBytes, automation, docId, get cloud() { return cloud; }, get review() { return review; } };
 
 canvas.addEventListener("pagewell:dirty", (e) => {
   say(e.detail.dirty ? `${fileName} — unsaved changes` : fileName);
@@ -63,14 +65,22 @@ async function store(bytes, name) {
     say("This is a shared link: it's view only, so changes aren't saved.", true);
     return null;
   }
-  if (cloud) return cloud.save(bytes);
+  if (cloud) {
+    if (review && !review.canSave) {
+      say("Someone else is editing this document: saving is off until they finish.", true);
+      return null;
+    }
+    const version = await cloud.save(bytes);
+    if (version && review) review.saved(version.version);
+    return version;
+  }
   return writeOut(bytes, name);
 }
 
 function openBytes(bytes, name) {
   fileName = name || "document.pdf";
   editor.open(bytes, fileName);
-  saveButton.disabled = viewOnly;
+  saveButton.disabled = viewOnly || Boolean(review && !review.canSave);
   undoButton.disabled = true;
   say(fileName);
 }
@@ -160,6 +170,16 @@ if (linkToken) {
   cloud = await openFromDrive({ docId, say, openBytes, automation, leave });
   if (cloud) {
     $("open-label").hidden = true;
+    const { startReview } = await import("/review.js");
+    review = startReview({
+      cloud,
+      say,
+      setEditable: (on) => {
+        saveButton.disabled = !on;
+        saveButton.title = on ? "" : "Someone else is editing, or you can only comment";
+      },
+      reload: () => leave(location.href),
+    });
     const printButton = $("print");
     printButton.hidden = false;
     printButton.addEventListener("click", () => {

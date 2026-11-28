@@ -1,0 +1,26 @@
+# Task PW-30 (milestone PW5), minted in Orunbase with this contract inline.
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: PW-30
+spec:
+  goal: The editor shows a review side panel for drive documents (threads, comment on a page, reply, resolve), joins the DocRoom over a ticketed WebSocket for presence, live comments and the edit lease (Save off while someone else holds it), and tells the room when it saves.
+  affects:
+    - default/pagewell/editor-web
+    - default/pagewell/editor-e2e
+    - default/pagewell/review-worker
+    - default/pagewell/review-worker-tests
+    - default/pagewell/contracts
+    - apps/editor-web/**
+    - apps/review-worker/**
+    - packages/contracts/**
+    - tests/editor-e2e/**
+    - tests/review-worker/**
+    - specs/epics/pagewell-pdf-workspace/**
+    - ai/context/**
+    - tasks/**
+  deps: [PW-29]
+  doneWhen:
+    - A two-browser test on stage shows comments appear live in both, the lease held by one and handed over when they leave
+    - The mocked editor test shows comments rendered as text, Save off under another's lease, take-over, live threads and the reload offer
+  gates: []
