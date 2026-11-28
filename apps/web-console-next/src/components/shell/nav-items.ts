@@ -65,12 +65,14 @@ export function buildNavSections(scope: NavScope, soloMode: boolean = SOLO_MODE)
         ? [
             // Pagewell's drive is the product: first in both profiles.
             { href: `${orgBase}/drive`, label: "Drive", icon: "HardDrive" },
+            { href: "/shared", label: "Shared with me", icon: "Share2" },
             // Solo: projects & usage/quota are platform plumbing the B2C user
             // never sees; their surfaces collapse to the Settings (Account) panel.
             { href: `${orgBase}/settings`, label: "Settings", icon: "Settings", subPanel: true },
           ]
         : [
             { href: `${orgBase}/drive`, label: "Drive", icon: "HardDrive" },
+            { href: "/shared", label: "Shared with me", icon: "Share2" },
             // Team profile (PW-18): members, roles and invitations live under
             // Settings. The baseline's Projects and Usage are platform plumbing,
             // not Pagewell surfaces, so they are not in the nav.

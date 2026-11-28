@@ -1,13 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Sidebar } from "@/components/shell/sidebar";
 import { Topbar } from "@/components/shell/topbar";
 import { BottomTabs } from "@/components/shell/bottom-tabs";
 import { LastOrgRecorder } from "@/components/shell/last-org-recorder";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRequireAuth } from "@/lib/use-async";
+import { isSharedPath } from "@/lib/sharing";
 import { useSession } from "@/lib/session";
 import { useApiQuery, qk } from "@/lib/query";
 import { wrap } from "@/lib/api";
@@ -64,13 +65,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
  */
 function OnboardingGate() {
   const router = useRouter();
+  const pathname = usePathname();
   const { client } = useSession();
   const orgs = useApiQuery(qk.orgs(), () =>
     wrap(async () => (await client.organizations.list()).organizations),
   );
   React.useEffect(() => {
-    if (orgs.data && orgs.data.length === 0) router.replace("/onboarding");
-  }, [orgs.data, router]);
+    // A guest (PW3) may have nothing of their own: Shared with me works without an org.
+    if (orgs.data && orgs.data.length === 0 && !isSharedPath(pathname)) router.replace("/onboarding");
+  }, [orgs.data, router, pathname]);
   return null;
 }
 

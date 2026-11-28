@@ -8,7 +8,7 @@ the code departed from `design.md`.
 | PW0 — the spec | ✅ done 2026-11-27 (PW-1 doc set; PW-2 public, listing-ready repo) | #3, #4 |
 | PW1 — editor on the web | ✅ done 2026-11-28: vendor subtree (PW-3), upstream hooks P1/P2 (PW-5, PW-6), Rust workspace + bridge (PW-4), editor-web on stage (PW-7), three browsers, budgets, brand check (PW-8). Both budgets missed and recorded (risk PW-C) | #5, #6, #7, #8, #9, #10 |
 | PW2 — drive | ✅ done 2026-11-28: data layer (PW-9), files worker (PW-10), R2 buckets (PW-11), api-edge facade (PW-12), the drive in the console (PW-13), the editor opens and saves drive documents (PW-14), files worker live on stage and prod (PW-15). Verified on stage: 44 API checks and the real editor (see "PW2 on stage") | #11–#18 |
-| PW3 — orgs and sharing | in progress: sharing data and the access rules (PW-16), files-worker enforces sharing with links, guests, activity and audit (PW-17), team profile on (PW-18), sharing at the edge, in the SDK and by email (PW-19) | #19, #20, #21 |
+| PW3 — orgs and sharing | in progress: sharing data and the access rules (PW-16), files-worker enforces sharing with links, guests, activity and audit (PW-17), team profile on (PW-18), sharing at the edge, in the SDK and by email (PW-19), sharing in the console (PW-20) | #19, #20, #21, #22 |
 | PW4 — heavy jobs | | |
 | PW5 — review | | |
 | PW6 — e-sign | | |
@@ -194,6 +194,23 @@ multi-org by the brief, so PW3 turns the team profile on everywhere. What change
 - **An org's home is its Drive** in both profiles (`orgHomePath`), and Pagewell's nav is Drive
   and Settings: the baseline's Projects and Usage are platform plumbing, still reachable by
   URL, not in the nav.
+
+### D16 — Sharing in the console as built (PW-20)
+- **Share dialog** (row menu → Share…, folders and documents): add people by email (a guest,
+  unless the address is a member's) or by a member's user id from a list, with a role, an
+  optional message and "email them"; people with access, the resource's own grants first (role
+  change, remove) then inherited ones ("From <folder>", changed on that folder); links with
+  role, expiry (never, 1, 7, 30 days), optional password and allow download. A new link's URL
+  (the editor's `/l/<token>`) is shown once, to copy; existing links can only be turned off.
+- **Gap: members have no names or emails in the console.** The baseline's members API returns
+  user ids only, and its Members page shows them raw; the share dialog offers members the same
+  way. Sharing by email always works (a member's email grant applies to them too).
+- **Shared with me** (`/shared`, in the sidebar): items from any org, documents open in the
+  editor, folders browse at `/shared/<org>/<folder>` with the path from the shared folder down.
+  A person with no org of their own is not sent to onboarding on these pages, and after sign-in
+  lands on Shared with me when something is shared with them.
+- **Activity** (row menu, documents): the audit entries for the document, newest first, paged.
+- **Guests** (Settings → Guests): list, with whether each has opened anything, and remove.
 
 ## PW2 on stage (2026-11-28)
 - **API, `tooling/e2e/drive-stage.mjs`, 44 checks green.** Two throwaway users in their

@@ -32,4 +32,10 @@ export const qk = {
   driveTrash: (orgId: string) => ["driveTrash", orgId] as const,
   driveQuota: (orgId: string) => ["driveQuota", orgId] as const,
   driveVersions: (orgId: string, docId: string) => ["driveVersions", orgId, docId] as const,
+  // Sharing (PW3).
+  driveAccess: (orgId: string, kind: string, id: string) => ["driveAccess", orgId, kind, id] as const,
+  driveActivity: (orgId: string, docId: string) => ["driveActivity", orgId, docId] as const,
+  driveGuests: (orgId: string) => ["driveGuests", orgId] as const,
+  sharedWithMe: () => ["sharedWithMe"] as const,
+  sharedFolder: (orgId: string, folderId: string) => ["sharedFolder", orgId, folderId] as const,
 };

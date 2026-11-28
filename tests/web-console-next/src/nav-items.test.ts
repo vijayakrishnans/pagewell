@@ -32,7 +32,7 @@ describe("buildNavSections", () => {
   it("adds a product-focused org section when orgSlug is present (Pagewell: the drive, then settings)", () => {
     const org = buildNavSections({ orgSlug: "acme" }).find((s) => s.id === "org")!;
     const hrefs = org.links.map((l) => l.href);
-    expect(hrefs).toEqual(["/orgs/acme/drive", "/orgs/acme/settings"]);
+    expect(hrefs).toEqual(["/orgs/acme/drive", "/shared", "/orgs/acme/settings"]);
     expect(hrefs).not.toContain("/orgs/acme/projects");
     expect(org.label).toBe("Org · acme");
   });
@@ -65,7 +65,7 @@ describe("buildNavSections under the Solo (M0) profile", () => {
     expect(org.label).toBe("Account");
     const hrefs = org.links.map((l) => l.href);
     // Pagewell's drive, then Settings: the platform plumbing is gone.
-    expect(hrefs).toEqual(["/orgs/acme/drive", "/orgs/acme/settings"]);
+    expect(hrefs).toEqual(["/orgs/acme/drive", "/shared", "/orgs/acme/settings"]);
     expect(hrefs).not.toContain("/orgs/acme/projects");
     expect(hrefs).not.toContain("/orgs/acme/usage");
   });
@@ -78,7 +78,7 @@ describe("buildNavSections under the Solo (M0) profile", () => {
   it("the team profile (soloMode false) names the org and leads with the drive; no projects or usage", () => {
     const org = buildNavSections({ orgSlug: "acme" }, false).find((s) => s.id === "org")!;
     expect(org.label).toBe("Org · acme");
-    expect(org.links.map((l) => l.href)).toEqual(["/orgs/acme/drive", "/orgs/acme/settings"]);
+    expect(org.links.map((l) => l.href)).toEqual(["/orgs/acme/drive", "/shared", "/orgs/acme/settings"]);
   });
 });
 

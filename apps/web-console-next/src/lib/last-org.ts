@@ -73,6 +73,8 @@ interface PostAuthClient {
   organizations: {
     list: () => Promise<{ organizations: { id: string; slug: string; createdAt: string }[] }>;
   };
+  /** Pagewell (PW3): a guest with no org of their own lands on what was shared with them. */
+  files?: { sharedWithMe: () => Promise<{ items: unknown[] }> };
 }
 
 /**
@@ -100,7 +102,10 @@ export async function resolvePostAuthDestination(client: PostAuthClient): Promis
   }
   try {
     const { organizations } = await client.organizations.list();
-    if (organizations.length === 0) return "/onboarding";
+    if (organizations.length === 0) {
+      const shared = await client.files?.sharedWithMe().catch(() => null);
+      return shared && shared.items.length > 0 ? "/shared" : "/onboarding";
+    }
     const home = pickAccountBillingOrg(organizations)!;
     writeLastOrgSlug(home.slug);
     return defaultOrgDestination(home.slug);
