@@ -54,7 +54,9 @@ another way, on purpose), **blocked** (waits on something outside the code), **c
 
 | Gap | Status | Why | What is missing | What was done instead | Lands |
 |---|---|---|---|---|---|
-| Console framework advisories | open | The baseline shipped Next.js 15.0.3 and @opennextjs/cloudflare 1.0.4 | Patched releases | Recorded with the advisories (status, OWASP A06) | PW-27 |
+| Console framework advisories | closed | — | — | Next 15.5.29, React 19.2.9, @opennextjs/cloudflare 1.20.19 (PW-27); no critical advisory left | Done in PW-27 |
+| zod 3 advisory (oversized collections) | open | Fixed only in zod 4, a breaking migration across contracts and forms | zod ≥ 4.6.6 | Inputs that reach zod are size-bounded by the edge and workers | A zod 4 migration task |
+| postcss advisory (via Next) | differently | It is Next's build-time CSS tooling | — | Not in the deployed Worker | When Next updates it |
 | Console CSP allows inline scripts | partial | Next's runtime inlines its bootstrap | Nonce-based script CSP | Self-only scripts, no eval, no plugins, no framing | Later, with a nonce middleware |
 
 ## Outside the code

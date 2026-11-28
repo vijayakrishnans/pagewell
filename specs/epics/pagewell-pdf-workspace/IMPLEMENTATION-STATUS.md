@@ -291,7 +291,11 @@ Asked for by the user for every build from now on; each PR states the areas it t
   handoff). Thumbnails must now be real PNG or WebP by their magic bytes.
 - **A06 Vulnerable components.** **Found:** the console's Next.js 15.0.3 has critical advisories
   (RCE in the React flight protocol, middleware authorization bypass) and @opennextjs/cloudflare
-  1.0.4 high ones (SSRF). Upgrading in PW-27.
+  1.0.4 high ones (SSRF). **Fixed in PW-27:** Next 15.5.29, React 19.2.9, @opennextjs/cloudflare
+  1.20.19 (its own @opennextjs/aws 4.2.1; the direct 3.6.2 pin is gone), wrangler 4.150. `pnpm
+  audit --prod` went from 86 advisories (6 critical, 32 high) to 5 (no critical; high: postcss
+  inside Next's build-time CSS tooling, which does not run in the Worker, and zod 3's
+  oversized-collection DoS, which needs a zod 4 migration, recorded in GAPS).
 - **A08 Integrity.** pdf-runner's base images are now pinned by digest; the OCR models were already
   checked by SHA-256; the editor bundle is content-addressed and pinned.
 - **A09 Logging.** Every drive change and share event is audited (including link opens and locks);
