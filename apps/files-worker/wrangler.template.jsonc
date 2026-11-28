@@ -36,7 +36,7 @@
       "r2_buckets": [
         {
           "binding": "FILES_BUCKET",
-          "bucket_name": "pagewell-files-stage"
+          "bucket_name": "@@wiring(cloudflare-r2/stage:r2_bucket_name)@@"
         }
       ],
       "services": [
@@ -61,7 +61,7 @@
       "r2_buckets": [
         {
           "binding": "FILES_BUCKET",
-          "bucket_name": "pagewell-files-prod"
+          "bucket_name": "@@wiring(cloudflare-r2/prod:r2_bucket_name)@@"
         }
       ],
       "services": [

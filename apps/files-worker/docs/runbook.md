@@ -1,9 +1,10 @@
 # files-worker — runbook
 
 ## How it deploys
-Merges to `main` converge through the component lanes like every worker. Until the
-`cloudflare-r2` Terraform root has created `pagewell-files-<env>` (WAITING W3), stage and
-prod run `verify` only; the task that lands the bucket switches them to `deploy`.
+Merges to `main` converge through the component lanes like every worker: stage and prod
+deploy on push to `main`. `FILES_BUCKET` is bound to `pagewell-files-<env>`, whose name the
+`cloudflare-r2` Terraform root publishes as `WIRING_CLOUDFLARE_R2` (rendered into
+`wrangler.jsonc` from `wrangler.template.jsonc`; `wiring.fixture.json` stands in offline).
 
 ## Verify
 `tests/files-worker` drives every route against a real SQLite engine and an in-memory R2,

@@ -1,0 +1,20 @@
+# Task PW-15 (milestone PW2), minted in Orunbase with this contract inline.
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: PW-15
+spec:
+  goal: files-worker deploys on push to main for stage and prod, binding FILES_BUCKET from the cloudflare-r2 wiring, so the drive works end to end on stage.
+  affects:
+    - default/pagewell/files-worker
+    - apps/files-worker/**
+    - specs/epics/pagewell-pdf-workspace/**
+    - ai/context/**
+    - tasks/**
+  deps: [PW-11]
+  envs: [stage, prod]
+  doneWhen:
+    - files-worker deploys to stage and prod on push to main with FILES_BUCKET bound from WIRING_CLOUDFLARE_R2
+    - On stage, upload, open in the editor, save v2, restore v1; a stale save gets 409; another org's ids get 404
+    - PW2 is marked done in the plan, status and ledger
+  gates: []
