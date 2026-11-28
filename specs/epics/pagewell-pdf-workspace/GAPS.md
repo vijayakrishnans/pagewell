@@ -36,7 +36,7 @@ another way, on purpose), **blocked** (waits on something outside the code), **c
 | Guest email verification step | differently | A magic-link sign-in already proves the address | A separate guest code | A guest grant matches whoever signs in with that email; first sign-in recorded as verified (D13) | Closed as built |
 | Link-token pepper | differently | A 256-bit random token cannot be guessed from its hash | A pepper secret | Plain SHA-256 of the token; PBKDF2 for passwords (D13) | Closed as built |
 | "Allow download" off | partial | The browser must receive the bytes to render them | Preventing a determined copy | The viewer hides Download; the API marks it (D13) | Closed as built (documented) |
-| Link-password guessing limit | partial | Reads use the edge's in-isolate limiter | A global per-link lockout | 60/min per address per colo; 8+ character PBKDF2 passwords; opens counted (risk PW-O) | PW11 (per-link failure count) |
+| Link-password guessing limit | closed | — | — | Per-link lockout: 10 wrong passwords lock a link for 15 minutes (PW-26), on top of the edge's per-address limit | Done in PW-26 |
 | Commenter role | partial | Comments arrive in PW5 | Commenting | The role is stored, decided by policy (`files.comment`) and shown; links may carry it | PW5 |
 | Invitations to members | differently | Members already see shares in Shared with me | An email to a member | Emails go to guests only (`files.shared`) (D14) | Closed as built |
 | Emails actually delivered on stage | blocked | Stage runs `DEBUG_DELIVERY`: codes and messages are returned, not mailed | Seeing a real inbox receive the invite | The enqueue is tested; the template is tested | When an email provider is set for stage/prod (PW11) |
@@ -50,11 +50,18 @@ another way, on purpose), **blocked** (waits on something outside the code), **c
 | Runner reads R2 through the wrapper | differently | The Worker can stream inputs and outputs; the container then needs no network at all | — | Inputs in the request body, outputs in the response (D17) | Closed as built |
 | Cloudflare Queue for jobs | differently | The deploy token cannot create Queues (W4) | A Queue | One Durable Object per job runs it from an alarm and retries (PW-24) | Closed as built, unless Queues become available |
 
+## Security (OWASP review, PW-26)
+
+| Gap | Status | Why | What is missing | What was done instead | Lands |
+|---|---|---|---|---|---|
+| Console framework advisories | open | The baseline shipped Next.js 15.0.3 and @opennextjs/cloudflare 1.0.4 | Patched releases | Recorded with the advisories (status, OWASP A06) | PW-27 |
+| Console CSP allows inline scripts | partial | Next's runtime inlines its bootstrap | Nonce-based script CSP | Self-only scripts, no eval, no plugins, no framing | Later, with a nonce middleware |
+
 ## Outside the code
 
 | Gap | Status | Why | What is missing | What was done instead | Lands |
 |---|---|---|---|---|---|
-| Docker on the build machine | blocked (W2) | The daemon answers, but this user is not in the `docker` group | Local runs of the `pdf-runner` image | CI builds images | User turns on Docker Desktop's WSL integration; needed for PW4 |
+| Docker on the build machine | closed (W2) | — | Local runs of the `pdf-runner` image | CI builds images | User turns on Docker Desktop's WSL integration; needed for PW4 |
 | Product domain | open | None at bootstrap (D3) | A domain with a shared cookie | workers.dev origins per environment | PW11 |
 | Cloudflare Containers (and Queues) grant | blocked (W4) | No declared token template has the Containers or Queues permission | Deploying pdf-runner | Runner built and tested in CI; Durable Objects instead of a Queue | The platform adds a template; the user creates the secret |
 | `orun/compliance` check | blocked | Never reports on this repo | The provenance check on PRs | Branch, trailer, manifest and `orun task check` kept by hand on every PR | User side |

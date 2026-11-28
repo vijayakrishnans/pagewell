@@ -58,6 +58,10 @@ export interface ShareLink {
   createdBy: string;
   createdAt: Date;
   revokedAt: Date | null;
+  /** Wrong passwords since the last right one (PW-26). */
+  failedAttempts: number;
+  /** Locked after too many wrong passwords, until this time. */
+  lockedUntil: Date | null;
 }
 
 /** Who is asking, for grant matching: their member id, and the verified email guest grants match. */
@@ -128,6 +132,13 @@ export interface SharingRepository {
   /** The link a token hash names, in whichever org. Revoked links are returned too; callers check. */
   linkByTokenHash(tokenHash: string): Promise<FilesResult<ShareLink>>;
   recordLinkOpen(orgId: Uuid, linkId: Uuid, now: Date, ipHash: string | null, uaHash: string | null): Promise<FilesResult<void>>;
+  /**
+   * A wrong password on a link: count it, and after `max` in a row lock the link until
+   * `now + lockMs` (the count starts again). Returns the lock time when this one locked it.
+   */
+  recordLinkFailure(orgId: Uuid, linkId: Uuid, now: Date, max: number, lockMs: number): Promise<FilesResult<{ lockedUntil: Date | null }>>;
+  /** A right password: the count starts again. */
+  resetLinkFailures(orgId: Uuid, linkId: Uuid): Promise<FilesResult<void>>;
   /** Is `resource` the folder `folderId` or anywhere under it? */
   withinFolder(orgId: Uuid, folderId: Uuid, resource: ResourceRef): Promise<FilesResult<boolean>>;
 
@@ -186,6 +197,8 @@ function mapLink(r: SqlRow): ShareLink {
     createdBy: r.created_by as string,
     createdAt: date(r.created_at),
     revokedAt: dateOrNull(r.revoked_at),
+    failedAttempts: Number(r.failed_attempts ?? 0),
+    lockedUntil: dateOrNull(r.locked_until),
   };
 }
 
@@ -420,6 +433,35 @@ export function createSharingRepository(executor: SqlExecutor): SharingRepositor
         return { ok: true, value: undefined };
       } catch {
         return fail("Failed to record link open");
+      }
+    },
+
+    async recordLinkFailure(orgId, linkId, now, max, lockMs) {
+      try {
+        const lockedUntil = new Date(now.getTime() + lockMs);
+        // One statement: increment, and lock (resetting the count) when this reaches max.
+        const row = await one(
+          `UPDATE files_links
+              SET failed_attempts = CASE WHEN failed_attempts + 1 >= $3 THEN 0 ELSE failed_attempts + 1 END,
+                  locked_until = CASE WHEN failed_attempts + 1 >= $3 THEN $4 ELSE locked_until END
+            WHERE org_id = $1 AND id = $2
+           RETURNING locked_until`,
+          [orgId, linkId, max, iso(lockedUntil)],
+        );
+        if (!row) return notFound;
+        const until = dateOrNull(row.locked_until);
+        return { ok: true, value: { lockedUntil: until && until > now ? until : null } };
+      } catch {
+        return fail("Failed to record a wrong link password");
+      }
+    },
+
+    async resetLinkFailures(orgId, linkId) {
+      try {
+        await executor.execute(`UPDATE files_links SET failed_attempts = 0 WHERE org_id = $1 AND id = $2 AND failed_attempts <> 0`, [orgId, linkId]);
+        return { ok: true, value: undefined };
+      } catch {
+        return fail("Failed to reset link failures");
       }
     },
 

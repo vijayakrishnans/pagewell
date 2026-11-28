@@ -268,6 +268,37 @@ multi-org by the brief, so PW3 turns the team profile on everywhere. What change
 - **Without a runner** both say so ("Heavy tools aren't available here yet", "Printing from the
   server isn't available yet") instead of failing silently.
 
+## OWASP review of PW2–PW4 (PW-26, 2026-11-28)
+Asked for by the user for every build from now on; each PR states the areas it touches.
+- **A01 Broken access control.** Every drive, sharing and jobs route decides from org role and
+  grants through policy; another org's id, or no access, is the same 404. Covered by the route
+  permission matrix, isolation tests in every worker, and the stage runs. Jobs act as the person
+  through files-worker, so they cannot widen access. No change needed.
+- **A02 Cryptographic failures.** Link tokens 256-bit random, stored as SHA-256; link passwords
+  PBKDF2-SHA256 (100,000 iterations, per-link salt), compared in constant time. No change needed.
+- **A03 Injection.** All SQL is parameterised; email templates escape names and messages and allow
+  only plain https links; the editor's folder picker builds DOM with textContent; file names in
+  Content-Disposition are percent-encoded; the runner turns no request value into a path or a tool.
+- **A04 Insecure design / A07 Authentication.** Link-password guessing was limited per colo only
+  (risk PW-O). **Fixed:** 10 wrong passwords in a row lock a link for 15 minutes, whoever guesses
+  (migration `230_files_link_lockout`, `link.locked` audited). Open: the editor holds the console's
+  token (risk PW-N, decide by PW11).
+- **A05 Security misconfiguration.** **Found:** the console sent no security headers; API
+  responses had no CSP or nosniff. **Fixed:** every api-edge response gets
+  `default-src 'none'; frame-ancestors 'none'; sandbox`, nosniff, DENY framing, HSTS and
+  no-referrer; every console route gets a CSP (self-only scripts, no plugins, no framing), DENY
+  framing, nosniff, HSTS, a permissions policy and `same-origin-allow-popups` (keeps the editor
+  handoff). Thumbnails must now be real PNG or WebP by their magic bytes.
+- **A06 Vulnerable components.** **Found:** the console's Next.js 15.0.3 has critical advisories
+  (RCE in the React flight protocol, middleware authorization bypass) and @opennextjs/cloudflare
+  1.0.4 high ones (SSRF). Upgrading in PW-27.
+- **A08 Integrity.** pdf-runner's base images are now pinned by digest; the OCR models were already
+  checked by SHA-256; the editor bundle is content-addressed and pinned.
+- **A09 Logging.** Every drive change and share event is audited (including link opens and locks);
+  logs never carry document text, names or keys.
+- **A10 SSRF.** The runner has no network; the jobs worker reaches only bound services (and a
+  configured RUNNER_URL); no user-supplied URL is fetched anywhere.
+
 ## PW3 on stage (2026-11-28)
 - **API, `tooling/e2e/sharing-stage.mjs`, 47 checks green** (twice: before and after the viewer
   deployed). An owner, an org viewer joined by invitation, a guest outside the org, and a second

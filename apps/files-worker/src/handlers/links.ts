@@ -30,6 +30,16 @@ export interface LinkCtx {
   bucket: R2Bucket;
 }
 
+/** Wrong passwords in a row before a link locks, and for how long. */
+export const LINK_MAX_FAILURES = 10;
+export const LINK_LOCK_MS = 15 * 60_000;
+
+function locked(ctx: LinkCtx, until: Date): Response {
+  const res = fail("rate_limited", "Too many wrong passwords. Try again later.", 429, ctx.requestId);
+  res.headers.set("retry-after", String(Math.max(1, Math.ceil((until.getTime() - ctx.now.getTime()) / 1000))));
+  return res;
+}
+
 // The owner's user id is not a link holder's business.
 const anonymous = <T extends { ownerUserId: string }>(d: T): T => ({ ...d, ownerUserId: "" });
 
@@ -44,10 +54,20 @@ export async function open(ctx: LinkCtx, request: Request, url: URL, token: stri
   const link = found.value;
   if (link.revokedAt || (link.expiresAt && link.expiresAt <= ctx.now)) return notFound(ctx.requestId);
   if (link.passwordHash) {
+    // Too many wrong passwords lock the link for a while, whoever is guessing (PW-26, OWASP A07).
+    if (link.lockedUntil && link.lockedUntil > ctx.now) return locked(ctx, link.lockedUntil);
     const given = request.headers.get(LINK_PASSWORD_HEADER);
-    if (!given || given.length > 200 || !(await verifyPassword(given, link.passwordHash))) {
+    if (!given) return fail("link_password_required", "This link needs its password", 401, ctx.requestId);
+    if (given.length > 200 || !(await verifyPassword(given, link.passwordHash))) {
+      const r = await ctx.sharing.recordLinkFailure(link.orgId as Uuid, link.id as Uuid, ctx.now, LINK_MAX_FAILURES, LINK_LOCK_MS);
+      if (r.ok && r.value.lockedUntil) {
+        const audit = createAuditor({ events: ctx.events, orgId: link.orgId as Uuid, actor: { type: "share_link", id: toPublic("lnk", link.id) }, requestId: ctx.requestId, now: ctx.now });
+        await audit.record("link.locked", { kind: link.resourceKind, id: link.resourceId }, `A link was locked for ${LINK_LOCK_MS / 60_000} minutes after ${LINK_MAX_FAILURES} wrong passwords`, { linkId: toPublic("lnk", link.id) });
+        return locked(ctx, r.value.lockedUntil);
+      }
       return fail("link_password_required", "This link needs its password", 401, ctx.requestId);
     }
+    if (link.failedAttempts > 0) await ctx.sharing.resetLinkFailures(link.orgId as Uuid, link.id as Uuid);
   }
   const orgId = link.orgId as Uuid;
   const resource: ResourceRef = { kind: link.resourceKind, id: link.resourceId as Uuid };

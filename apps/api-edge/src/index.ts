@@ -8,6 +8,7 @@ import { isOrgRoute, handleOrgRoute } from "./org-facade";
 import { isProjectRoute, handleProjectRoute } from "./project-facade";
 import { isFilesRoute, handleFilesRoute, isShareLinkRoute, handleShareLinkRoute } from "./files-facade";
 import { isJobsRoute, handleJobsRoute } from "./jobs-facade";
+import { applySecurityHeaders } from "./security-headers";
 import { isAuditRoute, handleAuditRoute } from "./audit-facade";
 import { isConfigRoute, handleConfigRoute } from "./config-facade";
 import { isWebhooksRoute, handleWebhooksRoute } from "./webhooks-facade";
@@ -85,7 +86,7 @@ export default {
       response = notFound(requestId, url.pathname);
     }
 
-    return applyCorsHeaders(response, request, env);
+    return applySecurityHeaders(applyCorsHeaders(response, request, env));
   },
 } satisfies ExportedHandler<Env>;
 

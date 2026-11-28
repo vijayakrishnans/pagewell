@@ -267,6 +267,13 @@ async function versionOf(ctx: Ctx, docId: Uuid, n: number) {
   return v.ok ? v.value : null;
 }
 
+/** PNG or WebP, by their magic bytes. */
+function isImage(b: Uint8Array, type: string): boolean {
+  if (type === "image/png") return b.length >= 8 && [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a].every((v, i) => b[i] === v);
+  if (type === "image/webp") return b.length >= 12 && String.fromCharCode(...b.subarray(0, 4)) === "RIFF" && String.fromCharCode(...b.subarray(8, 12)) === "WEBP";
+  return false;
+}
+
 async function boundedBytes(request: Request, max: number): Promise<Uint8Array | null> {
   const declared = contentLength(request);
   if (declared !== null && declared > max) return null;
@@ -281,6 +288,8 @@ export async function putThumbnail(ctx: Ctx, request: Request, docId: Uuid, n: n
   if (!(await versionOf(ctx, docId, n))) return notFound(ctx.requestId);
   const bytes = await boundedBytes(request, THUMB_MAX_BYTES);
   if (!bytes) return fail("bad_request", "A thumbnail is at most 512 KiB", 413, ctx.requestId);
+  // The bytes must be what the type says (PW-26): never store HTML or a script labelled an image.
+  if (!isImage(bytes, type)) return fail("bad_request", "The thumbnail is not a PNG or WebP image", 415, ctx.requestId);
   await ctx.bucket.put(r2Key.thumb(ctx.orgId, docId, n, 1), bytes, { httpMetadata: { contentType: type } });
   return new Response(null, { status: 204 });
 }

@@ -25,6 +25,9 @@ function setup(limits?: Record<string, number | null>): World {
   return w;
 }
 
+/** A minimal WebP: the RIFF/WEBP header and a few bytes (enough for the magic-byte check). */
+const WEBP = new Uint8Array([0x52, 0x49, 0x46, 0x46, 0x0c, 0, 0, 0, 0x57, 0x45, 0x42, 0x50, 0x56, 0x50, 0x38, 0x20]);
+
 async function upload(w: World, name = "Generated.pdf", pdf = fixturePdf(2), folderId?: string, user = ALICE, base = A) {
   const q = new URLSearchParams({ name, ...(folderId ? { folderId } : {}) });
   const res = await w.request("POST", `${base}/documents?${q}`, { user, body: pdf, headers: { "content-type": "application/pdf", "x-pagewell-page-count": "2" } });
@@ -162,7 +165,7 @@ describe("the drive, end to end", () => {
     const w = setup();
     const gone = (await upload(w, "gone.pdf")).body.data.document;
     await save(w, gone.id, 1, fixturePdf(3));
-    await w.request("PUT", `${A}/documents/${gone.id}/versions/1/thumbnail`, { user: ALICE, body: new Uint8Array([1, 2, 3]), headers: { "content-type": "image/webp" } });
+    await w.request("PUT", `${A}/documents/${gone.id}/versions/1/thumbnail`, { user: ALICE, body: WEBP, headers: { "content-type": "image/webp" } });
     const kept = (await upload(w, "kept.pdf")).body.data.document;
     await w.request("DELETE", `${A}/documents/${gone.id}`, { user: ALICE });
     const started = await json(await w.request("POST", `${A}/uploads`, { user: ALICE, json: { name: "never finished.pdf", size: 10 } }));
@@ -181,8 +184,12 @@ describe("the drive, end to end", () => {
   it("thumbnails and extracted text are stored per version", async () => {
     const w = setup();
     const doc = (await upload(w)).body.data.document;
-    const thumb = new Uint8Array([0x52, 0x49, 0x46, 0x46]);
+    const thumb = WEBP;
     expect((await w.request("PUT", `${A}/documents/${doc.id}/versions/1/thumbnail`, { user: ALICE, body: thumb, headers: { "content-type": "image/webp" } })).status).toBe(204);
+    // The bytes must be the image the type claims: HTML labelled image/png is refused (PW-26).
+    const html = new TextEncoder().encode("<html><script>alert(1)</script></html>");
+    expect((await w.request("PUT", `${A}/documents/${doc.id}/versions/1/thumbnail`, { user: ALICE, body: html, headers: { "content-type": "image/png" } })).status).toBe(415);
+    expect((await w.request("PUT", `${A}/documents/${doc.id}/versions/1/thumbnail`, { user: ALICE, body: WEBP, headers: { "content-type": "image/png" } })).status).toBe(415);
     const got = await w.request("GET", `${A}/documents/${doc.id}/versions/1/thumbnail`, { user: ALICE });
     expect(new Uint8Array(await got.arrayBuffer())).toEqual(thumb);
     expect((await w.request("PUT", `${A}/documents/${doc.id}/versions/1/thumbnail`, { user: ALICE, body: thumb, headers: { "content-type": "text/html" } })).status).toBe(415);
@@ -328,7 +335,7 @@ describe("cross-org isolation", () => {
     await w.request("DELETE", `${A}/folders/${trashedFolder.id}`, { user: ALICE });
     const doc = (await upload(w, "A doc.pdf", fixturePdf(2), folder.id)).body.data.document;
     await save(w, doc.id, 1, fixturePdf(3));
-    await w.request("PUT", `${A}/documents/${doc.id}/versions/1/thumbnail`, { user: ALICE, body: new Uint8Array([1]), headers: { "content-type": "image/webp" } });
+    await w.request("PUT", `${A}/documents/${doc.id}/versions/1/thumbnail`, { user: ALICE, body: WEBP, headers: { "content-type": "image/webp" } });
     const trashedDoc = (await upload(w, "A trashed.pdf")).body.data.document;
     await w.request("DELETE", `${A}/documents/${trashedDoc.id}`, { user: ALICE });
     const upl = (await json(await w.request("POST", `${A}/uploads`, { user: ALICE, json: { name: "A upload.pdf", size: 100 } }))).data.upload.id;
