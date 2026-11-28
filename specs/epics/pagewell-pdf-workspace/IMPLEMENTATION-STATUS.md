@@ -8,7 +8,7 @@ the code departed from `design.md`.
 | PW0 — the spec | ✅ done 2026-11-27 (PW-1 doc set; PW-2 public, listing-ready repo) | #3, #4 |
 | PW1 — editor on the web | ✅ done 2026-11-28: vendor subtree (PW-3), upstream hooks P1/P2 (PW-5, PW-6), Rust workspace + bridge (PW-4), editor-web on stage (PW-7), three browsers, budgets, brand check (PW-8). Both budgets missed and recorded (risk PW-C) | #5, #6, #7, #8, #9, #10 |
 | PW2 — drive | ✅ done 2026-11-28: data layer (PW-9), files worker (PW-10), R2 buckets (PW-11), api-edge facade (PW-12), the drive in the console (PW-13), the editor opens and saves drive documents (PW-14), files worker live on stage and prod (PW-15). Verified on stage: 44 API checks and the real editor (see "PW2 on stage") | #11–#18 |
-| PW3 — orgs and sharing | | |
+| PW3 — orgs and sharing | in progress: sharing data and the access rules (PW-16) | |
 | PW4 — heavy jobs | | |
 | PW5 — review | | |
 | PW6 — e-sign | | |
@@ -129,6 +129,27 @@ The other Terraform roots name resources `${namespacePrefix}…` (`stg-`, `prod-
 `pagewell-files-<env>` with no prefix, because the brokered `CLOUDFLARE_R2_TOKEN` (`r2-data`,
 created by the user, W3) is scoped to exactly those two names; the first plan named
 `stg-pagewell-files-stage`, which the token could not have created.
+
+### D13 — Sharing as built: one decision in policy, guests by verified email, plain token hashes (PW-16)
+- **One decision.** `policy-engine` decides a folder or document action (`files.read`,
+  `files.comment`, `files.write`, `files.delete`, `files.share`) from three facts files-worker
+  gathers and sends in `context.attributes.files`: the principal (member, guest or link), the
+  roles of the grants that reach the resource for that person, and the link's role. The org role
+  is the floor (owner, admin, builder → editor; viewer → viewer; billing_admin → nothing); the
+  widest of floor, grants and link wins. A link is read or comment only, whatever is stored;
+  only members share. `tests/policy-engine` › permission matrix runs org role × grant set ×
+  action (6 × 6 × 5) and link role × action against a table written from the design.
+- **Inheritance at read time.** A folder grant is not copied down: `grantsReaching` walks the
+  resource's folder chain in SQL, so a move changes inherited access with no rewrite.
+- **Guests are people who sign in.** The design's guest "email verification" is the magic-link
+  sign-in itself: a guest grant is matched to whoever signs in with that email (identity has
+  proved it), and the first such sign-in is recorded (`verified_at`, `user_id`). There is no
+  separate guest session or code.
+- **Link tokens.** 32 random bytes, stored as plain SHA-256, without the design's pepper secret:
+  a 256-bit token cannot be guessed from its hash, so the pepper would only add a secret to
+  manage. Passwords are PBKDF2-SHA256 with a per-link salt.
+- **`allow_download` is a viewer setting, not a control.** The bytes must reach the browser to be
+  rendered; turning download off hides the button and nothing more.
 
 ## PW2 on stage (2026-11-28)
 - **API, `tooling/e2e/drive-stage.mjs`, 44 checks green.** Two throwaway users in their

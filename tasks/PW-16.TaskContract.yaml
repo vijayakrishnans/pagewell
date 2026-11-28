@@ -1,0 +1,32 @@
+# Task PW-16 (milestone PW3), minted in Orunbase with this contract inline.
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: PW-16
+spec:
+  goal: Sharing tables (grants, links, link opens, guests), their repository, the sharing wire types, and the files access rules in policy-engine, proven by the permission matrix test.
+  affects:
+    - default/pagewell/policy-worker
+    - default/pagewell/db-migrate
+    - default/pagewell/policy-engine
+    - default/pagewell/policy-engine-tests
+    - default/pagewell/db
+    - default/pagewell/db-tests
+    - default/pagewell/contracts
+    - default/pagewell/contracts-tests
+    - packages/policy-engine/**
+    - packages/db/**
+    - packages/contracts/**
+    - tests/policy-engine/**
+    - tests/db/**
+    - tests/contracts/**
+    - apps/policy-worker/component.yaml
+    - specs/epics/pagewell-pdf-workspace/**
+    - ai/context/**
+    - tasks/**
+  deps: [PW-15]
+  doneWhen:
+    - Migration 210_files_sharing applies on stage and prod; every new table carries org_id
+    - Policy decides a folder or document action from org role, grants and link; the matrix test (role x grant x link x action) passes
+    - Repository tests cover inheritance, guests, links, Shared with me, orphans and cross-org isolation
+  gates: []

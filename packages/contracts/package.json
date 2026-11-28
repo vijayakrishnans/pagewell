@@ -24,7 +24,8 @@
     "./notifications": "./src/notifications.ts",
     "./integrations": "./src/integrations.ts",
     "./idempotency": "./src/idempotency.ts",
-    "./files": "./src/files.ts"
+    "./files": "./src/files.ts",
+    "./sharing": "./src/sharing.ts"
   },
   "scripts": {
     "build": "tsc --project tsconfig.build.json",

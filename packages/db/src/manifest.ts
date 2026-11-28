@@ -192,5 +192,14 @@ export const manifest: MigrationManifest = {
       description:
         "Pagewell drive foundation (PW2) — org-scoped folders, documents, versions (numbers from the primary key) and in-flight multipart uploads, with a 30-day soft-delete trash",
     },
+    {
+      id: "210_files_sharing",
+      context: "files",
+      path: "210_files_sharing/up.sql",
+      checksum:
+        "b8b29c0a4e81c6f2e5985d735a2efef2faf691b7d26fcabe13dad7d20d886fe3",
+      description:
+        "Pagewell drive sharing (PW3) — member and guest grants on folders and documents (inherited down the folder tree at read time), share links stored as token hashes with optional PBKDF2 passwords and expiry, link opens (hashed), and guests matched by verified email",
+    },
   ],
 };

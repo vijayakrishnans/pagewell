@@ -17,3 +17,4 @@ export * from "./billing.js";
 export * from "./notifications.js";
 export * from "./integrations.js";
 export * from "./files.js";
+export * from "./sharing.js";
