@@ -15,7 +15,7 @@ reason; `⛔ Blocked` is added beside the status when a row waits on
 | OCR, non-Latin scripts | Yes | No | upstream | deferred: engine limit, tracked upstream | |
 | Edit existing text | Yes | Thin | upstream roadmap | deferred: not built here (design §5) | |
 | Office ⇄ PDF | Yes | Missing | PW11 (LibreOffice container, flag-gated) | planned | |
-| Accounts, cloud storage, versions | Yes | No | PW2 | planned | |
+| Accounts, cloud storage, versions | Yes | No | PW2 | verified (stage, 2026-11-28) | `tooling/e2e/drive-stage.mjs`; `tests/editor-e2e` › cloud-live, cloud; `tests/files-worker`; `tests/db` › files |
 | Org sharing, links, guests | Yes | No | PW3 | planned | |
 | Comments synced across people | Yes | Local only | PW5 | planned | |
 | Review requests | Yes | No | PW5 | planned | |

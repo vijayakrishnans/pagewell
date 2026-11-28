@@ -10,7 +10,7 @@ Read this first on every resume. Then the notes file
 Phase A done: workspace `ws_52SNF622` in `openproduct-6ny98czp` (the user's
 decision, superseding `openproduct-sms84q22`), cirrus-baseline bootstrapped
 in ~6 min, stage and prod healthy. Epic EP-2 minted with PW0–PW11.
-PW0 ✅, PW1 ✅. PW2 (drive) in progress: data layer (PW-9) and files worker (PW-10) merged; api-edge facade (PW-12) merged; the drive in the console (PW-13) merged; the editor on the drive (PW-14) merged; the R2 bucket root (PW-11) merged and applied after the user created W3 on 2026-11-28. PW-15 switches files-worker to deploy and runs the stage end-to-end.
+PW0 ✅, PW1 ✅, PW2 ✅ (2026-11-28: #11–#17 and the close-out; buckets pagewell-files-stage/prod; stage e2e green). Next: PW3 (orgs and sharing).
 
 ## Inputs actually used
 
@@ -81,7 +81,7 @@ PW0 mls_QNVAF2QE · PW1 mls_3F6D2YPV · PW2 mls_3QY0GJGR · PW3 mls_48B1ECZE · 
 | PW-13 | PW2 | #14 (83f1947) | done |
 | PW-14 | PW2 | #15 (29da24b) | done |
 | PW-11 | PW2 | #16 (1126f77) | done: buckets pagewell-files-stage/prod created |
-| PW-15 | PW2 | — | in progress |
+| PW-15 | PW2 | #17 (a653a9c), close-out PR | done: files-worker live; stage e2e 44 + editor green |
 
 ## Measured budgets
 

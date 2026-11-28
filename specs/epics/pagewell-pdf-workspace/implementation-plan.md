@@ -56,7 +56,7 @@ CI workflow, `packages/contracts` (bridge types).
 - the brand check passes: no ArtCraft marks remain on user-visible surfaces
 - `/edit/local` answers on stage
 
-## PW2 — drive
+## PW2 — drive ✅
 
 `apps/files-worker` (folders, documents, versions, uploads, trash), R2
 bucket per env, multipart uploads, `baseVersion` conflicts, open from and

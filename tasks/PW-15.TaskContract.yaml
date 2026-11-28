@@ -8,6 +8,8 @@ spec:
   affects:
     - default/pagewell/files-worker
     - apps/files-worker/**
+    - tooling/e2e/**
+    - tests/editor-e2e/**
     - specs/epics/pagewell-pdf-workspace/**
     - ai/context/**
     - tasks/**
