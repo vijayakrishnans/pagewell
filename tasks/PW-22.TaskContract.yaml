@@ -1,0 +1,15 @@
+# Task PW-22 (milestone PW3), minted in Orunbase with this contract inline.
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: PW-22
+spec:
+  goal: specs/epics/pagewell-pdf-workspace/GAPS.md lists every open, partial, different or blocked item from PW0 to PW3 with why, what is missing, what was done and where it lands.
+  affects:
+    - specs/epics/pagewell-pdf-workspace/**
+    - ai/context/**
+    - tasks/**
+  doneWhen:
+    - GAPS.md exists and covers the departures D1-D16 and open risks PW-C, PW-J, PW-M, PW-N, PW-O
+    - The epic README links it
+  gates: []
