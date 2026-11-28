@@ -99,7 +99,8 @@ PW0 mls_QNVAF2QE · PW1 mls_3F6D2YPV · PW2 mls_3QY0GJGR · PW3 mls_48B1ECZE · 
 | PW-29 | PW5 | #34 (347fc56) | done: review-worker + DocRoom live on stage; review-stage.mjs 23 green (real WebSockets) |
 | PW-30 | PW5 | #36 (3bffbff), #37 | done: editor review panel, presence, lease; two-browser live test green; review-stage 30 green |
 | PW-31 | PW6 | #38 (4cfeca0) | done: e-sign data + evidence chain; migration with triggers on stage/prod |
-| PW-32 | PW6 | — | in progress: runner sign_complete |
+| PW-32 | PW6 | #39 (4122247) | done: runner sign_complete; pdfsig valid in CI; tamper caught |
+| PW-33 | PW6 | — | in progress: sign-worker + edge + SDK + templates |
 
 ## Measured budgets
 

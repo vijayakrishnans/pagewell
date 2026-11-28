@@ -70,6 +70,8 @@ export interface Envelope {
   expiresAt: Date | null;
   reminderDays: number | null;
   createdBy: string;
+  /** The sender's email when they made it (from 251_sign_sender). */
+  senderEmail: string | null;
   createdAt: Date;
   updatedAt: Date;
   sentAt: Date | null;
@@ -107,7 +109,7 @@ export interface DraftInput {
 }
 
 export interface SignRepository {
-  createDraft(input: DraftInput & { id: Uuid; orgId: Uuid; createdBy: string; now: Date }): Promise<SignResult<Envelope>>;
+  createDraft(input: DraftInput & { id: Uuid; orgId: Uuid; createdBy: string; senderEmail?: string | null; now: Date }): Promise<SignResult<Envelope>>;
   /** Replace a draft's content (documents, signers, fields); only while it is a draft. */
   updateDraft(orgId: Uuid, envelopeId: Uuid, input: DraftInput, now: Date): Promise<SignResult<Envelope>>;
   getEnvelope(orgId: Uuid, envelopeId: Uuid): Promise<SignResult<Envelope>>;
@@ -224,6 +226,7 @@ function mapEnvelope(r: SqlRow, documents: EnvelopeDocument[], signers: Signer[]
     expiresAt: dateOrNull(r.expires_at),
     reminderDays: r.reminder_days == null ? null : Number(r.reminder_days),
     createdBy: r.created_by as string,
+    senderEmail: (r.sender_email as string | null) ?? null,
     createdAt: date(r.created_at),
     updatedAt: date(r.updated_at),
     sentAt: dateOrNull(r.sent_at),
@@ -287,9 +290,9 @@ export function createSignRepository(executor: SqlExecutor): SignRepository {
       try {
         await executeBatch(executor, [
           {
-            text: `INSERT INTO sign_envelopes (id, org_id, title, message, order_mode, expires_at, reminder_days, created_by, created_at, updated_at)
-                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $9)`,
-            params: [input.id, input.orgId, input.title, input.message, input.orderMode, input.expiresAt ? iso(input.expiresAt) : null, input.reminderDays, input.createdBy, iso(input.now)],
+            text: `INSERT INTO sign_envelopes (id, org_id, title, message, order_mode, expires_at, reminder_days, created_by, sender_email, created_at, updated_at)
+                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10)`,
+            params: [input.id, input.orgId, input.title, input.message, input.orderMode, input.expiresAt ? iso(input.expiresAt) : null, input.reminderDays, input.createdBy, input.senderEmail ?? null, iso(input.now)],
           },
           ...contentStatements(input.orgId, input.id, input),
         ]);

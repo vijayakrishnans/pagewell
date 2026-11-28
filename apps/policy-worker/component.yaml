@@ -70,3 +70,4 @@ spec:
 # orun: redeploy PW-16 files access rules (files.comment, files.share, resource-level decisions) 20261128T022000Z
 # orun: redeploy PW-24 stub for JOBS_WORKER 20261128T040000Z
 # orun: redeploy PW-29 stub for REVIEW_WORKER 20261128T070000Z
+# orun: redeploy PW-33 stub for SIGN_WORKER 20261128T090000Z

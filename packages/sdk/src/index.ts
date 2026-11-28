@@ -20,6 +20,7 @@ import { EventsClient } from "./events.js";
 import { MembershipsClient } from "./memberships.js";
 import { JobsClient } from "./jobs.js";
 import { ReviewClient } from "./review.js";
+import { SignClient } from "./sign.js";
 import { MeteringClient } from "./metering.js";
 import { NotificationsClient } from "./notifications.js";
 import { OrganizationsClient } from "./organizations.js";
@@ -40,6 +41,8 @@ export class Pagewell {
   readonly jobs: JobsClient;
   /** Pagewell's review (PW5). */
   readonly review: ReviewClient;
+  /** Pagewell's e-sign (PW6). */
+  readonly sign: SignClient;
   readonly apiKeys: ApiKeysClient;
   readonly webhooks: WebhooksClient;
   readonly metering: MeteringClient;
@@ -62,6 +65,7 @@ export class Pagewell {
     this.memberships = new MembershipsClient(this.transport);
     this.jobs = new JobsClient(this.transport);
     this.review = new ReviewClient(this.transport);
+    this.sign = new SignClient(this.transport);
     this.apiKeys = new ApiKeysClient(this.transport);
     this.webhooks = new WebhooksClient(this.transport);
     this.metering = new MeteringClient(this.transport);
@@ -81,6 +85,7 @@ export { ProjectsClient } from "./projects.js";
 export { FilesClient } from "./files.js";
 export { JobsClient } from "./jobs.js";
 export { ReviewClient } from "./review.js";
+export { SignClient } from "./sign.js";
 export { EnvironmentsClient } from "./environments.js";
 export { MembershipsClient } from "./memberships.js";
 export {

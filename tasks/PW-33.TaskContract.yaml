@@ -1,0 +1,39 @@
+# Task PW-33 (milestone PW6), minted in Orunbase with this contract inline.
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: PW-33
+spec:
+  goal: apps/sign-worker — envelopes (drafts, send with frozen versions, resend, void, evidence), the signer's API with no account (link + email code, own fields, consent), parallel and sequential order, reminders and expiry, and completion through pdf-jobs-worker's internal route to the runner; api-edge routes, SDK client, emails.
+  affects:
+    - default/pagewell/sign-worker
+    - default/pagewell/sign-worker-tests
+    - default/pagewell/api-edge
+    - default/pagewell/api-edge-tests
+    - default/pagewell/pdf-jobs-worker
+    - default/pagewell/pdf-jobs-worker-tests
+    - default/pagewell/notifications-worker
+    - default/pagewell/notifications-worker-tests
+    - default/pagewell/sdk
+    - default/pagewell/contracts
+    - default/pagewell/db
+    - default/pagewell/db-tests
+    - default/pagewell/db-migrate
+    - default/pagewell/policy-worker
+    - apps/sign-worker/**
+    - apps/api-edge/**
+    - apps/pdf-jobs-worker/**
+    - apps/notifications-worker/**
+    - apps/policy-worker/component.yaml
+    - packages/**
+    - tests/**
+    - pnpm-lock.yaml
+    - specs/epics/pagewell-pdf-workspace/**
+    - ai/context/**
+    - tasks/**
+  deps: [PW-31, PW-32]
+  doneWhen:
+    - tests/sign-worker — both orders end to end, codes and links, runner away then back, decline, void, expiry, reminders, evidence verifies, isolation
+    - A whole envelope through the real runner validates in pdfsig
+    - sign-worker deploys to stage and prod
+  gates: []

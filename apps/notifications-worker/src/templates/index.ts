@@ -262,7 +262,89 @@ const renderReviewReminder: TemplateRenderer = (data, opts) => {
   return { subject, html, text };
 };
 
+// ---- Pagewell e-sign (PW6). The signing link and the code are each sent only to their signer. ----
+
+const quote = (text: string) => (text ? `<p style="margin:0 0 16px;font-size:14px;border-left:3px solid #d0d0dc;padding-left:12px;">${escapeHtml(text)}</p>` : "");
+const para = (text: string) => `<p style="margin:0 0 16px;font-size:14px;">${escapeHtml(text)}</p>`;
+const small = (text: string) => `<p style="margin:0;font-size:13px;color:#6b6b80;">${escapeHtml(text)}</p>`;
+const footer = (brand: string) => escapeHtml(brand ? `Sent by ${brand}` : "This is an automated email.");
+const SIMPLE = "This is a simple electronic signature with an audit trail.";
+
+/** Asked to sign (also a reminder, with "reminder": the link is new; earlier ones no longer work). */
+function renderSignRequest(reminder: boolean): TemplateRenderer {
+  return (data, opts) => {
+    const brand = opts.brandName ?? "";
+    const title = str(data, "title");
+    const from = str(data, "from");
+    const message = str(data, "message");
+    const url = safeLink(str(data, "signUrl"));
+    const until = formatTimestamp(str(data, "expiresAt"));
+    const lead = `${from || "Someone"} asked you to sign${title ? ` "${title}"` : " a document"}.`;
+    const subject = `${reminder ? "Reminder: please sign" : "Please sign"}${title ? ` "${title}"` : ""}${brand ? ` on ${brand}` : ""}`;
+    const after = `${until ? `This link works until ${until}. ` : ""}${reminder ? "Earlier links no longer work. " : ""}You will be sent a code to confirm this email address.`;
+    const text = [lead, message ? `Message: ${message}` : "", url ? `Review and sign: ${url}` : "", after, SIMPLE, "If you were not expecting this, you can ignore this email."].filter(Boolean).join("\n\n");
+    const html = htmlShell(reminder ? "A reminder to sign" : "Please sign", [para(lead), quote(message), button(url, "Review and sign"), para(after), small(`${SIMPLE} If you were not expecting this, you can ignore this email.`)].join(""), footer(brand));
+    return { subject, html, text };
+  };
+}
+
+const renderSignCode: TemplateRenderer = (data, opts) => {
+  const brand = opts.brandName ?? "";
+  const code = /^\d{6}$/.test(str(data, "code")) ? str(data, "code") : "";
+  const title = str(data, "title");
+  const minutes = str(data, "minutes") || "10";
+  const lead = `Your code to sign${title ? ` "${title}"` : ""} is ${code}. It works for ${minutes} minutes.`;
+  const subject = `Your signing code${brand ? ` for ${brand}` : ""}`;
+  const text = [lead, "If you did not ask for it, someone has your signing link: ignore this email and tell the sender."].join("\n\n");
+  const html = htmlShell(
+    "Your signing code",
+    [para(`Your code to sign${title ? ` "${title}"` : ""}:`), `<p style="margin:0 0 16px;font-size:28px;letter-spacing:6px;font-weight:600;">${escapeHtml(code)}</p>`, para(`It works for ${minutes} minutes.`), small("If you did not ask for it, someone has your signing link: ignore this email and tell the sender.")].join(""),
+    footer(brand),
+  );
+  return { subject, html, text };
+};
+
+const renderSignDeclined: TemplateRenderer = (data, opts) => {
+  const brand = opts.brandName ?? "";
+  const title = str(data, "title");
+  const who = [str(data, "signerName"), str(data, "signerEmail") ? `<${str(data, "signerEmail")}>` : ""].filter(Boolean).join(" ");
+  const reason = str(data, "reason");
+  const lead = `${who || "A signer"} declined to sign${title ? ` "${title}"` : ""}. The envelope is closed and its links no longer work.`;
+  const subject = `Declined${title ? `: "${title}"` : ""}${brand ? ` on ${brand}` : ""}`;
+  const text = [lead, reason ? `Reason: ${reason}` : ""].filter(Boolean).join("\n\n");
+  return { subject, html: htmlShell("Signing declined", [para(lead), quote(reason)].join(""), footer(brand)), text };
+};
+
+const renderSignVoided: TemplateRenderer = (data, opts) => {
+  const brand = opts.brandName ?? "";
+  const title = str(data, "title");
+  const reason = str(data, "reason");
+  const lead = `The request to sign${title ? ` "${title}"` : ""} was withdrawn. Its links no longer work, and there is nothing for you to do.`;
+  const subject = `No longer needed${title ? `: "${title}"` : ""}${brand ? ` on ${brand}` : ""}`;
+  const text = [lead, reason ? `Reason: ${reason}` : ""].filter(Boolean).join("\n\n");
+  return { subject, html: htmlShell("Signing withdrawn", [para(lead), quote(reason)].join(""), footer(brand)), text };
+};
+
+const renderSignCompleted: TemplateRenderer = (data, opts) => {
+  const brand = opts.brandName ?? "";
+  const title = str(data, "title");
+  const sha = /^[0-9a-f]{64}$/.test(str(data, "sha256")) ? str(data, "sha256") : "";
+  const url = safeLink(str(data, "downloadUrl"));
+  const lead = `Everyone has signed${title ? ` "${title}"` : ""}. The signed PDF, with a certificate page, is sealed with a digital signature.`;
+  const subject = `Completed${title ? `: "${title}"` : ""}${brand ? ` on ${brand}` : ""}`;
+  const hashLine = sha ? `Its SHA-256 is ${sha}.` : "";
+  const text = [lead, url ? `Download it (the link works for 30 days): ${url}` : "", hashLine, SIMPLE].filter(Boolean).join("\n\n");
+  const html = htmlShell("Signing completed", [para(lead), button(url, "Download the signed PDF"), url ? small("The link works for 30 days.") : "", sha ? `<p style="margin:16px 0;font-size:12px;font-family:monospace;word-break:break-all;">SHA-256 ${escapeHtml(sha)}</p>` : "", small(SIMPLE)].join(""), footer(brand));
+  return { subject, html, text };
+};
+
 const TEMPLATES: Record<string, TemplateRenderer> = {
+  "sign.requested": renderSignRequest(false),
+  "sign.reminder": renderSignRequest(true),
+  "sign.code": renderSignCode,
+  "sign.declined": renderSignDeclined,
+  "sign.voided": renderSignVoided,
+  "sign.completed": renderSignCompleted,
   "review.mentioned": renderReviewMentioned,
   "review.requested": renderReviewRequested,
   "review.reminder": renderReviewReminder,

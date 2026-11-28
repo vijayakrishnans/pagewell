@@ -91,3 +91,35 @@ export function runnerFor(env: Env): Runner | null {
     },
   };
 }
+
+/**
+ * e-sign completion (PW6): sign-worker's request, passed to the runner's /run as it came (the
+ * x-pagewell-run header and the inputs back to back), and the runner's answer passed back. Only
+ * sign_complete goes this way; only sign-worker reaches it (a service binding: this Worker has
+ * no public route, and api-edge forwards only /v1/organizations/{org}/jobs…).
+ */
+export async function forwardSignComplete(env: Env, request: Request): Promise<Response> {
+  const json = (status: number, code: string, message: string) => Response.json({ error: { code, message } }, { status });
+  let header: { operation?: unknown };
+  try {
+    header = JSON.parse(request.headers.get("x-pagewell-run") ?? "") as { operation?: unknown };
+  } catch {
+    return json(400, "bad_request", "x-pagewell-run must be JSON");
+  }
+  if (header.operation !== "sign_complete") return json(400, "bad_request", "only sign_complete goes this way");
+  const send = target(env);
+  if (!send) return json(503, "runner_unavailable", "Heavy jobs are not available here yet");
+  const base = env.PDF_RUNNER ? "http://pdf-runner" : env.RUNNER_URL!.replace(/\/$/, "");
+  const body = await request.arrayBuffer();
+  try {
+    const res = await send(new Request(`${base}/run`, { method: "POST", headers: { "x-pagewell-run": request.headers.get("x-pagewell-run")!, "content-length": String(body.byteLength) }, body }));
+    const headers = new Headers({ "content-type": res.headers.get("content-type") ?? "application/octet-stream" });
+    for (const h of ["x-pagewell-outputs", "x-pagewell-pages"]) {
+      const v = res.headers.get(h);
+      if (v) headers.set(h, v);
+    }
+    return new Response(res.body, { status: res.status, headers });
+  } catch {
+    return json(503, "runner_unavailable", "The PDF runner could not be reached");
+  }
+}

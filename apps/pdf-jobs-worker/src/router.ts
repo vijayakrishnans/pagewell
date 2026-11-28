@@ -10,7 +10,7 @@ import type { Env } from "./env.js";
 import { fail, invalid, methodNotAllowed, notFound, ok, readJson, unavailable } from "./http.js";
 import { fromPublic, generateRequestId, newUuid, toPublic } from "./ids.js";
 import { jobLimits } from "./limits.js";
-import { runnerAvailable } from "./runner.js";
+import { forwardSignComplete, runnerAvailable } from "./runner.js";
 import { dispatch as dispatchToRunner } from "./dispatch.js";
 
 // The jobs API, behind api-edge (which authenticates and sets the actor headers), under
@@ -189,6 +189,7 @@ export async function route(request: Request, env: Env, now: Date = new Date(), 
   if (url.pathname === "/health" && request.method === "GET") {
     return ok({ ok: true, service: "pdf-jobs-worker", environment: env.ENVIRONMENT, runner: runnerAvailable(env) }, requestId);
   }
+  if (url.pathname === "/internal/sign-complete" && request.method === "POST") return forwardSignComplete(env, request);
   const m = url.pathname.match(ORG_ROUTE);
   if (!m) return notFound(requestId);
   const orgId = fromPublic("org", m[1]);

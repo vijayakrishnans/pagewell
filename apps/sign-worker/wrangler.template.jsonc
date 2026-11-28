@@ -1,0 +1,84 @@
+// Rendered to wrangler.jsonc by tooling/wire/render.mjs (BF6 deploy-time wiring).
+// Resource IDs are NEVER committed: @@wiring(<component>/<env>:<key>)@@ tokens are
+// resolved from the workspace's orun secrets at deploy time (wire-live) or from the
+// committed wiring.fixture.json for offline dry-runs (wire-fixture).
+//
+// sign-worker: Pagewell's e-sign (PW6). D1 for envelopes, signers, fields and the evidence log;
+// R2 for drawn signatures; the drive through FILES_WORKER (as the sender); the completion through
+// JOBS_WORKER's internal route to the pdf-runner. No public route: api-edge fronts it.
+{
+  "name": "pagewell-sign-worker",
+  "compatibility_date": "2025-05-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "src/index.ts",
+  "minify": false,
+  "vars": {
+    "ENVIRONMENT": "local"
+  },
+  "env": {
+    "dev": {
+      "vars": {
+        "ENVIRONMENT": "dev",
+        "DEBUG_DELIVERY": "true"
+      }
+    },
+    "stage": {
+      "workers_dev": false,
+      "vars": {
+        "ENVIRONMENT": "stage",
+        // Links in signing emails open the signing page on the editor's origin.
+        "SIGN_URL": "https://pagewell-editor-web-stage.vijayakrishnan12994.workers.dev",
+        // Stage returns links and codes in responses, for its tests (like login codes there).
+        "DEBUG_DELIVERY": "true"
+      },
+      "triggers": { "crons": ["27 * * * *"] },
+      "d1_databases": [
+        {
+          "binding": "PLATFORM_DB",
+          "database_name": "pagewell-stage",
+          "database_id": "@@wiring(cloudflare-d1/stage:d1_database_id)@@"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "FILES_BUCKET",
+          "bucket_name": "@@wiring(cloudflare-r2/stage:r2_bucket_name)@@"
+        }
+      ],
+      "services": [
+        { "binding": "FILES_WORKER", "service": "pagewell-files-worker-stage" },
+        { "binding": "NOTIFICATIONS_WORKER", "service": "pagewell-notifications-worker-stage" },
+        { "binding": "JOBS_WORKER", "service": "pagewell-pdf-jobs-worker-stage" }
+      ]
+    },
+    "prod": {
+      "workers_dev": false,
+      "vars": {
+        "ENVIRONMENT": "prod",
+        // Links in signing emails open the signing page on the editor's origin.
+        "SIGN_URL": "https://pagewell-editor-web-prod.vijayakrishnan12994.workers.dev",
+        // Never in prod: links and codes go only by email.
+        "DEBUG_DELIVERY": "false"
+      },
+      "triggers": { "crons": ["27 * * * *"] },
+      "d1_databases": [
+        {
+          "binding": "PLATFORM_DB",
+          "database_name": "pagewell-prod",
+          "database_id": "@@wiring(cloudflare-d1/prod:d1_database_id)@@"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "FILES_BUCKET",
+          "bucket_name": "@@wiring(cloudflare-r2/prod:r2_bucket_name)@@"
+        }
+      ],
+      "services": [
+        { "binding": "FILES_WORKER", "service": "pagewell-files-worker-prod" },
+        { "binding": "NOTIFICATIONS_WORKER", "service": "pagewell-notifications-worker-prod" },
+        { "binding": "JOBS_WORKER", "service": "pagewell-pdf-jobs-worker-prod" }
+      ]
+    }
+  }
+}

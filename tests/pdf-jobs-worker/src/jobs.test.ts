@@ -1,6 +1,7 @@
 import { toPublic } from "@jobs-worker/ids";
 import { RunnerError } from "@jobs-worker/runner";
 import { sweep } from "@jobs-worker/cron";
+import { route as jobsRoute } from "@jobs-worker/router";
 import type { Uuid } from "@saas/db/ids";
 import { fixturePdf, jobsWorld, type JobsWorld } from "./harness.js";
 
@@ -257,5 +258,32 @@ describe("isolation", () => {
     expect((await w.request("POST", `${B}/jobs/${jobA.id}/cancel`, { user: BOB })).status).toBe(404);
     expect((await w.request("GET", `${B}/jobs/${jobA.id}/files/page-1.png`, { user: BOB })).status).toBe(404);
     expect(w.queued).toHaveLength(1);
+  });
+});
+
+describe("the e-sign completion route (PW6)", () => {
+  const run = (w: JobsWorld, operation: string) =>
+    jobsRoute(new Request("http://jobs/internal/sign-complete", { method: "POST", headers: { "x-pagewell-run": JSON.stringify({ operation, options: {}, inputs: [3] }) }, body: "abc" }), w.env, w.files.now);
+
+  it("passes only sign_complete to the runner, as it came, and its answer back", async () => {
+    expect((await run(jobsWorld({}, { runner: false }), "sign_complete")).status).toBe(503);
+    const w = jobsWorld();
+    expect((await run(w, "rotate")).status).toBe(400);
+    const seen: Array<{ url: string; header: string | null; body: string }> = [];
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = (async (input: RequestInfo | URL) => {
+      const req = input as Request;
+      seen.push({ url: req.url, header: req.headers.get("x-pagewell-run"), body: await req.text() });
+      return new Response("PDFJSON", { headers: { "x-pagewell-outputs": '[{"name":"result.pdf","size":3},{"name":"signature.json","size":4}]', "x-pagewell-pages": "3" } });
+    }) as typeof fetch;
+    try {
+      const res = await run(w, "sign_complete");
+      expect(res.status).toBe(200);
+      expect(res.headers.get("x-pagewell-outputs")).toContain("result.pdf");
+      expect(await res.text()).toBe("PDFJSON");
+    } finally {
+      globalThis.fetch = realFetch;
+    }
+    expect(seen).toEqual([{ url: "http://runner.test/run", header: JSON.stringify({ operation: "sign_complete", options: {}, inputs: [3] }), body: "abc" }]);
   });
 });
