@@ -91,7 +91,9 @@ PW0 mls_QNVAF2QE · PW1 mls_3F6D2YPV · PW2 mls_3QY0GJGR · PW3 mls_48B1ECZE · 
 | PW-22 | PW3 | #26 (9e455a7) | done: gaps register (GAPS.md) |
 | PW-23 | PW4 | #27 | done on merge: pdf-runner image + CI (19 checks inside the image, no network); deploy waits on W4 |
 | PW-24 | PW4 | #28 (2ac6b65) | done: pdf-jobs-worker, migration 220, edge, SDK (live; 503 runner_unavailable until W4); jobs-stage.mjs 9 green |
-| PW-25 | PW4 | #29 (121ea28) | done: console Run a tool + jobs tray, editor Print |
+| PW-25 | PW4 | #29 (121ea28), #30 | done: console Run a tool + jobs tray, editor Print |
+| PW-23 | PW4 | #27 (d681efc) | done: pdf-runner image + CI |
+| PW-26 | — | — | in progress: OWASP hardening (headers, link lockout, thumbnail bytes, pinned images) |
 
 ## Measured budgets
 

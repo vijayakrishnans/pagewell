@@ -6,7 +6,8 @@
 # enableInternet = false.
 
 # ---- build pdfcraft-cli ----
-FROM rust:1.100-bookworm AS cli
+# Base images pinned by digest (PW-26, OWASP A08): a re-tagged upstream image cannot change the build.
+FROM rust:1.100-bookworm@sha256:75d26c23c24cc6ea1cdabf0714a6bff8fd7bf3248716043fd7ae86dac7f41b94 AS cli
 WORKDIR /src
 COPY vendor/pdfcraft/ ./
 # The CLI without the MCP server: the runner only uses `run`.
@@ -16,7 +17,7 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
  && cp target/release/pdfcraft-cli /usr/local/bin/pdfcraft-cli
 
 # ---- OCR models (the files named in vendor/pdfcraft/ATTRIBUTION.toml, checked by sha256) ----
-FROM debian:bookworm-slim AS models
+FROM debian:bookworm-slim@sha256:e67eeead736ff7bbe258ef088bff683635c561b1fcfefad0806c1df4ab49ce0e AS models
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl && rm -rf /var/lib/apt/lists/*
 WORKDIR /models
 RUN curl -fsSLo text-detection.onnx https://ocrs-models.s3-accelerate.amazonaws.com/text-detection.onnx \
@@ -25,7 +26,7 @@ RUN curl -fsSLo text-detection.onnx https://ocrs-models.s3-accelerate.amazonaws.
  && echo "86c145c2edb96c8caed5b1ebb8f44d706408922211451c309c625157dd6061c5  text-recognition.onnx" | sha256sum -c -
 
 # ---- runtime ----
-FROM node:22-bookworm-slim
+FROM node:22-bookworm-slim@sha256:be979e5523c76fa4d5ca4ebd3099078f220aa47ec39c48ad5b5df9314debd6eb
 RUN apt-get update \
  && apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-eng qpdf util-linux fonts-dejavu-core \
  && rm -rf /var/lib/apt/lists/*

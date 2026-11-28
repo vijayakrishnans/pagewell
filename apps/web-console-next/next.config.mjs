@@ -1,11 +1,16 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { SECURITY_HEADERS } from "./security-headers.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Security headers on every route (OWASP A05, PW-26): ./security-headers.mjs.
+  async headers() {
+    return [{ source: "/:path*", headers: SECURITY_HEADERS }];
+  },
   // `@saas/sdk` is a workspace-source package: its `package.json` exports
   // point at `./src/index.ts` and the file uses TS NodeNext-style `./*.js`
   // import specifiers that resolve to the sibling `.ts` source. Next's

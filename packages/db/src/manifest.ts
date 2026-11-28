@@ -210,5 +210,14 @@ export const manifest: MigrationManifest = {
       description:
         "Pagewell heavy jobs (PW4) — one org-scoped row per PdfCraft operation run in the pdf-runner container: inputs (documents at fixed versions), options, status, the versions, documents or day-long result files it made, bounded errors",
     },
+    {
+      id: "230_files_link_lockout",
+      context: "files",
+      path: "230_files_link_lockout/up.sql",
+      checksum:
+        "9078902fc3fe0dddc56ef3cd3d81ae58c93bb6d580a337520b693f3d9c7141ad",
+      description:
+        "Share-link password lockout (PW-26) — wrong-password count and a lock time on files_links: 10 wrong passwords in a row lock a link for 15 minutes",
+    },
   ],
 };

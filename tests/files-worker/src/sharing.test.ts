@@ -266,6 +266,29 @@ describe("share links", () => {
     expect(everything).not.toContain("correct horse");
   });
 
+  it("ten wrong passwords lock a link for 15 minutes, whoever guesses; a right one resets the count", async () => {
+    const w = setup();
+    const d = await upload(w, "Guarded.pdf");
+    const { link, token } = (await json(await w.request("POST", `${A}/documents/${d}/links`, { user: ALICE, json: { role: "viewer", password: "correct horse" } }))).data;
+    const tryWith = (pw: string, ip = "203.0.113.1") => w.request("GET", linkPath(token), { headers: { "x-pagewell-link-password": pw, "cf-connecting-ip": ip } });
+    for (let i = 0; i < 9; i++) expect((await tryWith(`wrong ${i}`, `198.51.100.${i}`)).status).toBe(401);
+    expect((await tryWith("correct horse")).status).toBe(200); // resets the count
+    for (let i = 0; i < 9; i++) expect((await tryWith(`wrong again ${i}`)).status).toBe(401);
+    const locking = await tryWith("tenth wrong");
+    expect(locking.status).toBe(429);
+    expect(Number(locking.headers.get("retry-after"))).toBe(900);
+    // Locked: even the right password waits.
+    expect((await tryWith("correct horse")).status).toBe(429);
+    expect(types(w)).toContain("link.locked");
+    w.now = new Date(w.now.getTime() + 15 * 60_000 + 1000);
+    expect((await tryWith("correct horse")).status).toBe(200);
+    // A link without a password has nothing to lock.
+    const open = (await json(await w.request("POST", `${A}/documents/${d}/links`, { user: ALICE, json: { role: "viewer" } }))).data.token;
+    for (let i = 0; i < 12; i++) await w.request("GET", linkPath(open), { headers: { "x-pagewell-link-password": "anything" } });
+    expect((await w.request("GET", linkPath(open))).status).toBe(200);
+    void link;
+  });
+
   it("an expired link is a 404; an editor link is refused; a link to a trashed document is a 404", async () => {
     const w = setup();
     const d = await upload(w, "Soon.pdf");

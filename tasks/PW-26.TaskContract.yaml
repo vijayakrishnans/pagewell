@@ -1,0 +1,30 @@
+# Task PW-26 (epic EP-2), minted in Orunbase with this contract inline.
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: PW-26
+spec:
+  goal: Close the OWASP findings in what shipped, security headers on every API response and console route, a share-link password lockout, thumbnail magic-byte checks, base images pinned by digest, and an OWASP review recorded in the status file.
+  affects:
+    - default/pagewell/api-edge
+    - default/pagewell/api-edge-tests
+    - default/pagewell/files-worker
+    - default/pagewell/files-worker-tests
+    - default/pagewell/web-console-next
+    - default/pagewell/web-console-next-tests
+    - default/pagewell/db-migrate
+    - default/pagewell/db
+    - apps/api-edge/**
+    - apps/files-worker/**
+    - apps/web-console-next/**
+    - packages/db/**
+    - containers/pdf-runner/**
+    - tests/**
+    - specs/epics/pagewell-pdf-workspace/**
+    - ai/context/**
+    - tasks/**
+  doneWhen:
+    - Stage API responses and console pages carry CSP, frame, nosniff and HSTS headers
+    - Ten wrong passwords lock a link for 15 minutes; tests prove it; risk PW-O closed
+    - Thumbnails must be real PNG or WebP; pdf-runner base images are pinned by digest
+  gates: []
