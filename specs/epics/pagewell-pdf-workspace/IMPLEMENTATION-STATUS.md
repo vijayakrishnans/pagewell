@@ -302,6 +302,11 @@ multi-org by the brief, so PW3 turns the team profile on everywhere. What change
 - **Threads and comments get time-ordered ids** (UUIDv7): two written in one millisecond keep
   their order. The frozen-clock tests caught it.
 - **files-worker** gains `GET …/versions/{n}/text` (read) for carrying anchors.
+- **On stage (2026-11-28), `tooling/e2e/review-stage.mjs`, 23 checks green** over real WebSockets
+  through api-edge: ticketed joins (a used ticket refused, a stranger gets none), presence, the
+  lease held by the owner and refused to a guest commenter, comments and replies live both ways,
+  the new-version notice, a quoted thread carried to v2 and one on a changed page outdated, the
+  reviewer's decision closing the request, the lease freed on leave, and the audit log.
 
 ## OWASP review of PW2–PW4 (PW-26, 2026-11-28)
 Asked for by the user for every build from now on; each PR states the areas it touches.
