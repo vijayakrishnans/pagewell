@@ -280,6 +280,7 @@ export async function openFromDrive({ docId, say, openBytes, automation, leave }
     else window.open(url, "_blank");
     setTimeout(() => URL.revokeObjectURL(url), 60_000);
     say(`${doc.name} — version ${base}`);
+    return url;
   }
 
   try {

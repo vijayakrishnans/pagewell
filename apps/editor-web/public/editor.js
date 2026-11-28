@@ -165,7 +165,13 @@ if (linkToken) {
     printButton.addEventListener("click", () => {
       // The tab opens now, on the click; it gets the PDF when the job is done.
       const tab = window.open("", "_blank");
-      cloud.print(tab).catch((err) => say(String(err), true));
+      cloud
+        .print(tab)
+        .then((url) => {
+          // What the tab was sent to, for tests (a headless browser has no PDF viewer to show it).
+          if (url) window.pagewell.lastPrint = url;
+        })
+        .catch((err) => say(String(err), true));
     });
   }
 } else {

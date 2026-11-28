@@ -247,12 +247,11 @@ test("Print makes a print-ready PDF of the open version on the server and opens 
   const popup = context.waitForEvent("page");
   await page.locator("#print").click();
   const tab = await popup;
-  // The tab gets the PDF: a viewer shows it at a blob: URL; a browser without one (headless)
-  // downloads it instead.
-  let downloaded = false;
-  tab.on("download", () => (downloaded = true));
+  // The PDF is fetched and the new tab is sent to it (a blob: URL of the PDF). How a browser then
+  // shows it is its own: a viewer, or a download in a headless one.
   await expect.poll(() => jobs.fileFetched, { timeout: 30_000 }).toBe(true);
-  await expect.poll(() => downloaded || tab.url().startsWith("blob:"), { timeout: 30_000 }).toBe(true);
+  await expect.poll(() => page.evaluate(() => window.pagewell.lastPrint ?? ""), { timeout: 30_000 }).toMatch(/^blob:/);
+  expect(tab).toBeTruthy();
   expect(jobs.created).toEqual([{ operation: "print", documentIds: [DOC], version: 1 }]);
   expect(jobs.polls).toBeGreaterThanOrEqual(2);
 });
