@@ -10,7 +10,7 @@ Read this first on every resume. Then the notes file
 Phase A done: workspace `ws_52SNF622` in `openproduct-6ny98czp` (the user's
 decision, superseding `openproduct-sms84q22`), cirrus-baseline bootstrapped
 in ~6 min, stage and prod healthy. Epic EP-2 minted with PW0–PW11.
-PW0 ✅, PW1 ✅, PW2 ✅ (#11–#18), PW3 ✅ (#19–#25, gaps register #26). PW4 (heavy jobs) built: runner image (#27), jobs worker live without a runner (#28), tools UI and Print (#29); running jobs on stage waits on W4 (Cloudflare Containers grant). PW5 ✅ (#33–#37): review data, review-worker + DocRoom, editor panel and lease; verified on stage.
+PW0 ✅, PW1 ✅, PW2 ✅ (#11–#18), PW3 ✅ (#19–#25, gaps register #26). PW4 (heavy jobs) built: runner image (#27), jobs worker live without a runner (#28), tools UI and Print (#29); running jobs on stage waits on W4 (Cloudflare Containers grant). PW5 ✅ (#33–#37): review data, review-worker + DocRoom, editor panel and lease; verified on stage. PW6 built (#38–#43): two of three done-when met; the seal on stage waits on W4.
 
 ## Inputs actually used
 
@@ -101,7 +101,7 @@ PW0 mls_QNVAF2QE · PW1 mls_3F6D2YPV · PW2 mls_3QY0GJGR · PW3 mls_48B1ECZE · 
 | PW-31 | PW6 | #38 (4cfeca0) | done: e-sign data + evidence chain; migration with triggers on stage/prod |
 | PW-32 | PW6 | #39 (4122247) | done: runner sign_complete; pdfsig valid in CI; tamper caught |
 | PW-33 | PW6 | #40 (235ec7d), #41 | done: sign-worker live on stage/prod; sign-stage.mjs 39 green (completion waits on W4) |
-| PW-34 | PW6 | — | in progress: signing page + console envelopes |
+| PW-34 | PW6 | #42 (3be54a4), #43 | done: signing page + console envelopes; live two-signer test (one at 390 px) green |
 
 ## Measured budgets
 

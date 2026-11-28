@@ -19,7 +19,7 @@ reason; `⛔ Blocked` is added beside the status when a row waits on
 | Org sharing, links, guests | Yes | No | PW3 | verified (stage, 2026-11-28) | `tooling/e2e/sharing-stage.mjs`; `tests/editor-e2e` › cloud-live (link), cloud (links); `tests/policy-engine` › permission matrix; `tests/files-worker` › sharing; `tests/db` › files-sharing; `tests/web-console-next` › sharing |
 | Comments synced across people | Yes | Local only | PW5 | verified on stage (Chromium, two browsers; comments on a page, not a selection) | `tests/review-worker`; `tests/editor-e2e` › review: comments show as text…; `cloud-live` › two people in one document |
 | Review requests | Yes | No | PW5 | verified on stage through the API (emails and reminders in tests; asking from the console is later) | `tests/review-worker` › review requests; `tooling/e2e/review-stage.mjs` |
-| Request e-signatures | Yes (Acrobat Sign) | No | PW6 (simple e-signature) | in_progress (API, signing page, console envelopes; completion on stage waits on W4) | `tests/db` › sign; `tests/sign-worker`; runner image tests |
+| Request e-signatures | Yes (Acrobat Sign) | No | PW6 (simple e-signature) | shipped ⛔ Blocked (W4: the seal on stage); signing verified on stage, the seal verified locally and in CI | `tests/db` › sign; `tests/sign-worker`; runner image tests |
 | Heavy jobs off-device | Yes (cloud) | No | PW4 | in_progress: runner verified in CI; jobs API live on stage without a runner ⛔ Blocked (W4) | `containers/pdf-runner` (19 checks); `tests/pdf-jobs-worker`; `tooling/e2e/jobs-stage.mjs` |
 | Remote MCP for agents | Partial | Local stdio MCP | PW7 | planned | |
 | Chat with documents, citations | Yes (AI Assistant) | No | PW8 | planned | |
