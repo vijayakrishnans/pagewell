@@ -1,0 +1,21 @@
+# Task PW-27 (epic EP-2), minted in Orunbase with this contract inline.
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: PW-27
+spec:
+  goal: web-console-next runs a Next.js 15.5 release and an @opennextjs/cloudflare release with no known critical or high advisories, still deploying and working on stage.
+  affects:
+    - default/pagewell/web-console-next
+    - default/pagewell/web-console-next-tests
+    - apps/web-console-next/**
+    - tests/web-console-next/**
+    - pnpm-lock.yaml
+    - specs/epics/pagewell-pdf-workspace/**
+    - ai/context/**
+    - tasks/**
+  doneWhen:
+    - pnpm audit --prod shows no critical or high advisory for next or @opennextjs/cloudflare
+    - The console builds, deploys to stage and serves login, drive and share pages
+    - Console tests pass
+  gates: []
