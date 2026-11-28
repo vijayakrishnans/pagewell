@@ -10,7 +10,7 @@ Read this first on every resume. Then the notes file
 Phase A done: workspace `ws_52SNF622` in `openproduct-6ny98czp` (the user's
 decision, superseding `openproduct-sms84q22`), cirrus-baseline bootstrapped
 in ~6 min, stage and prod healthy. Epic EP-2 minted with PW0–PW11.
-PW0 ✅, PW1 ✅, PW2 ✅ (#11–#18), PW3 ✅ (#19–#25, gaps register #26). PW4 (heavy jobs) built: runner image (#27), jobs worker live without a runner (#28), tools UI and Print (#29); running jobs on stage waits on W4 (Cloudflare Containers grant).
+PW0 ✅, PW1 ✅, PW2 ✅ (#11–#18), PW3 ✅ (#19–#25, gaps register #26). PW4 (heavy jobs) built: runner image (#27), jobs worker live without a runner (#28), tools UI and Print (#29); running jobs on stage waits on W4 (Cloudflare Containers grant). PW5 ✅ (#33–#37): review data, review-worker + DocRoom, editor panel and lease; verified on stage.
 
 ## Inputs actually used
 
@@ -97,7 +97,7 @@ PW0 mls_QNVAF2QE · PW1 mls_3F6D2YPV · PW2 mls_3QY0GJGR · PW3 mls_48B1ECZE · 
 | PW-27 | — | #32 (07ee0e9) | done: console Next 15.5.29 / OpenNext 1.20.19; audit 86→5; stage checks green |
 | PW-28 | PW5 | #33 (911597c) | done: review data + anchor rule |
 | PW-29 | PW5 | #34 (347fc56) | done: review-worker + DocRoom live on stage; review-stage.mjs 23 green (real WebSockets) |
-| PW-30 | PW5 | — | in progress: editor review panel, presence, lease; two-browser test |
+| PW-30 | PW5 | #36 (3bffbff), #37 | done: editor review panel, presence, lease; two-browser live test green; review-stage 30 green |
 
 ## Measured budgets
 

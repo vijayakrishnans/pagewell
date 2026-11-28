@@ -10,7 +10,7 @@ the code departed from `design.md`.
 | PW2 — drive | ✅ done 2026-11-28: data layer (PW-9), files worker (PW-10), R2 buckets (PW-11), api-edge facade (PW-12), the drive in the console (PW-13), the editor opens and saves drive documents (PW-14), files worker live on stage and prod (PW-15). Verified on stage: 44 API checks and the real editor (see "PW2 on stage") | #11–#18 |
 | PW3 — orgs and sharing | ✅ done 2026-11-28: sharing data and the access rules with the permission matrix (PW-16), files-worker enforces sharing with links, guests, activity and audit (PW-17), team profile on (PW-18), sharing at the edge, in the SDK and by email (PW-19), sharing in the console (PW-20), the share-link viewer and the stage run (PW-21). Verified on stage: 47 sharing checks and the real editor on a link (see "PW3 on stage") | #19–#25 |
 | PW4 — heavy jobs | in progress: the runner image (PW-23, #27), pdf-jobs-worker, its data, the edge and the SDK (PW-24, #28, live on stage without a runner), tools in the console and Print in the editor (PW-25). Running jobs waits on the Containers grant (WAITING W4) | #28 |
-| PW5 — review | in progress: review data and the anchor rule (PW-28), review-worker with the DocRoom (PW-29), the editor's panel and lease (PW-30) | #33, #34, #35 |
+| PW5 — review | ✅ done 2026-11-28: review data and the anchor rule (PW-28), review-worker with the DocRoom (PW-29), the editor's panel, presence and lease (PW-30). Verified on stage: 30 review checks over real WebSockets and the two-browser editor test (see "PW5 on stage") | #33–#37 |
 | PW6 — e-sign | | |
 | PW7 — remote MCP | | |
 | PW8 — chat with documents | | |
@@ -329,6 +329,19 @@ multi-org by the brief, so PW3 turns the team profile on everywhere. What change
 - **The room says hello** with who you are and what you may do, so the panel can leave you out of
   "Also here", and each lease event says whether it is this connection's (`mine`), so one person
   in two tabs edits in one.
+
+### PW5 on stage (2026-11-28)
+Every done-when of PW5, on the deployed stage:
+- **Comments live in both browsers**: `tests/editor-e2e` › `cloud-live` › "two people in one
+  document" (Chromium, two browser contexts, the real editor): the owner holds the lease, the
+  second person (shared as an editor) has Save off and sees who is editing; a comment and a reply
+  arrive live each way; the owner's save offers the other a reload; when the owner leaves, the
+  other's editor takes the lease and Save comes back. The other two live editor tests still pass.
+- **Lease handover and break**: the handover above, and `tooling/e2e/review-stage.mjs` (30 checks):
+  an editor holds the lease, the owner (who may share) breaks it, the editor is told, the owner
+  takes it; a commenter cannot take it; the lease is freed on leave.
+- **Anchors on a changed page**: the same run saves version 2 with changed text: the quoted thread
+  is carried to v2, the one on a page whose text changed is outdated and stays on its page.
 
 ## OWASP review of PW2–PW4 (PW-26, 2026-11-28)
 Asked for by the user for every build from now on; each PR states the areas it touches.

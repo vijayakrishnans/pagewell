@@ -155,6 +155,23 @@ ownerRoom.ws.close();
 check("when the owner leaves, the lease is freed", Boolean(await guestRoom.waitFor((e) => e.type === "lease" && e.holder === null)));
 guestRoom.ws.close();
 
+// A lease break: an editor (shared as one) holds the lease; the owner, who may share, breaks it.
+const editor = await signIn("editor", false);
+res = await call(owner.token, "POST", `${A}/documents/${doc.id}/grants`, { json: { email: editor.email, role: "editor", notify: false } });
+check("share the document with an editor", res.status === 201, `status ${res.status}`);
+const editorRoom = await join(editor.token, A, doc.id);
+check("the editor joins and may edit, but not break", editorRoom.status === 201 && editorRoom.canEdit === true && (await editorRoom.waitFor((e) => e.type === "hello"))?.canBreak === false);
+editorRoom.ws.send(JSON.stringify({ type: "lease.take" }));
+check("the editor holds the lease", Boolean(await editorRoom.waitFor((e) => e.type === "lease" && e.mine === true)));
+const ownerAgain = await join(owner.token, A, doc.id);
+check("the owner sees the editor holding it, and may break it", Boolean(await ownerAgain.waitFor((e) => e.type === "lease" && e.holder?.name === editor.email && e.mine === false)) && (await ownerAgain.waitFor((e) => e.type === "hello"))?.canBreak === true);
+ownerAgain.ws.send(JSON.stringify({ type: "lease.break" }));
+check("the owner breaks it; the editor is told it is free", Boolean(await editorRoom.waitFor((e) => e.type === "lease" && e.holder === null)));
+ownerAgain.ws.send(JSON.stringify({ type: "lease.take" }));
+check("the owner takes it over", Boolean(await ownerAgain.waitFor((e) => e.type === "lease" && e.mine === true)) && Boolean(await editorRoom.waitFor((e) => e.type === "lease" && e.holder?.name === owner.email)));
+editorRoom.ws.close();
+ownerAgain.ws.close();
+
 // Isolation, and the audit trail.
 check("a stranger cannot read the threads", (await call(stranger.token, "GET", `${A}/documents/${doc.id}/threads`)).status === 404);
 const audit = (await data(await call(owner.token, "GET", `${A}/audit?category=review&limit=100`))).auditEntries.map((e) => e.eventType);
