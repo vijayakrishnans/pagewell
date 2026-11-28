@@ -1,0 +1,37 @@
+# Task PW-29 (milestone PW5), minted in Orunbase with this contract inline.
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: PW-29
+spec:
+  goal: apps/review-worker serves comment threads, review requests with reminders and mentions, and the DocRoom WebSocket (ticketed; presence, edit lease, live fan-out), acting through the drive; api-edge routes it and the SDK covers it.
+  affects:
+    - default/pagewell/review-worker
+    - default/pagewell/review-worker-tests
+    - default/pagewell/api-edge
+    - default/pagewell/api-edge-tests
+    - default/pagewell/files-worker
+    - default/pagewell/notifications-worker
+    - default/pagewell/notifications-worker-tests
+    - default/pagewell/sdk
+    - default/pagewell/contracts
+    - default/pagewell/policy-worker
+    - apps/review-worker/**
+    - apps/api-edge/**
+    - apps/files-worker/**
+    - apps/notifications-worker/**
+    - apps/policy-worker/component.yaml
+    - packages/**
+    - tests/review-worker/**
+    - tests/api-edge/**
+    - tests/notifications-worker/**
+    - pnpm-lock.yaml
+    - specs/epics/pagewell-pdf-workspace/**
+    - ai/context/**
+    - tasks/**
+  deps: [PW-28]
+  doneWhen:
+    - review-worker deploys to stage and prod; threads and review requests work through the edge
+    - Room tests show a ticket admits once, one editor holds the lease, leaving or a share-holder's break frees it, and comments fan out live
+    - Anchors on a changed page are carried or outdated as the rule says, on list
+  gates: []

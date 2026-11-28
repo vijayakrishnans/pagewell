@@ -94,6 +94,7 @@ const ROUTES: Route[] = [
   { method: "PUT", pattern: /^\/documents\/([^/]+)\/versions\/(\d+)\/thumbnail$/, scope: { on: "files.write" }, build: (m) => onDocVersion(m, (id, n) => (ctx, req) => docs.putThumbnail(ctx, req, id, n)) },
   { method: "GET", pattern: /^\/documents\/([^/]+)\/versions\/(\d+)\/thumbnail$/, scope: { on: "files.read" }, build: (m) => onDocVersion(m, (id, n) => (ctx) => docs.getThumbnail(ctx, id, n)) },
   { method: "PUT", pattern: /^\/documents\/([^/]+)\/versions\/(\d+)\/text$/, scope: { on: "files.write" }, build: (m) => onDocVersion(m, (id, n) => (ctx, req) => docs.putText(ctx, req, id, n)) },
+  { method: "GET", pattern: /^\/documents\/([^/]+)\/versions\/(\d+)\/text$/, scope: { on: "files.read" }, build: (m) => onDocVersion(m, (id, n) => (ctx) => docs.getText(ctx, id, n)) },
   { method: "GET", pattern: /^\/documents\/([^/]+)\/activity$/, scope: { on: "files.read" }, build: (m) => onDoc(m, (id) => (ctx, _req, url) => share.activity(ctx, url, id)) },
 
   // Sharing, on a folder or a document.

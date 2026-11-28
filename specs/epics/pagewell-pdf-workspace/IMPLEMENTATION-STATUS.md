@@ -10,7 +10,7 @@ the code departed from `design.md`.
 | PW2 — drive | ✅ done 2026-11-28: data layer (PW-9), files worker (PW-10), R2 buckets (PW-11), api-edge facade (PW-12), the drive in the console (PW-13), the editor opens and saves drive documents (PW-14), files worker live on stage and prod (PW-15). Verified on stage: 44 API checks and the real editor (see "PW2 on stage") | #11–#18 |
 | PW3 — orgs and sharing | ✅ done 2026-11-28: sharing data and the access rules with the permission matrix (PW-16), files-worker enforces sharing with links, guests, activity and audit (PW-17), team profile on (PW-18), sharing at the edge, in the SDK and by email (PW-19), sharing in the console (PW-20), the share-link viewer and the stage run (PW-21). Verified on stage: 47 sharing checks and the real editor on a link (see "PW3 on stage") | #19–#25 |
 | PW4 — heavy jobs | in progress: the runner image (PW-23, #27), pdf-jobs-worker, its data, the edge and the SDK (PW-24, #28, live on stage without a runner), tools in the console and Print in the editor (PW-25). Running jobs waits on the Containers grant (WAITING W4) | #28 |
-| PW5 — review | in progress: review data and the anchor rule (PW-28) | |
+| PW5 — review | in progress: review data and the anchor rule (PW-28), review-worker with the DocRoom (PW-29) | #33 |
 | PW6 — e-sign | | |
 | PW7 — remote MCP | | |
 | PW8 — chat with documents | | |
@@ -281,6 +281,27 @@ multi-org by the brief, so PW3 turns the team profile on everywhere. What change
   unchanged), else marked `outdated`, never moved to another page. It compares the text the editor
   stores with every save; without stored text, a thread is kept while its page exists. Carrying is
   conditional on the version it was at, so two readers carry it once.
+
+### D21 — review-worker and the DocRoom as built (PW-29)
+- **Acts through the drive**, like jobs: read to see, comment to write and resolve, write to remove
+  another's comment, share to ask for a review or break a lease. The DocRoom is a class in
+  review-worker, as designed; routes are org-scoped (`/v1/organizations/{org}/documents/{doc}/room`)
+  rather than the design's `/v1/rooms/{doc}`.
+- **Joining the room takes a ticket.** A browser cannot send an Authorization header on a WebSocket,
+  so the editor asks `POST …/room/ticket` (with access) for a single-use ticket that lives 60
+  seconds and opens the socket with it; the session token never goes in a URL. api-edge passes the
+  upgrade straight through (a 101 is not re-wrapped) with only the WebSocket headers.
+- **The lease** belongs to one connection, lasts 60 s unless renewed, ends on leave or by its
+  alarm, and can be broken by anyone who may share the document (the design's "admin").
+  New-version notices come from the lease holder's own save, not from files-worker.
+- **Review requests share the document with each reviewer** as a commenter through the drive's
+  share (guests invited as usual), email `review.requested`, close when everyone decided; a daily
+  cron sends `review.reminder` to those who have not, near and after the due date.
+- **Mentions email only people already in the conversation** (earlier commenters on the document,
+  reviewers of an open request), so a mention cannot reveal a document's name to a stranger.
+- **Threads and comments get time-ordered ids** (UUIDv7): two written in one millisecond keep
+  their order. The frozen-clock tests caught it.
+- **files-worker** gains `GET …/versions/{n}/text` (read) for carrying anchors.
 
 ## OWASP review of PW2–PW4 (PW-26, 2026-11-28)
 Asked for by the user for every build from now on; each PR states the areas it touches.

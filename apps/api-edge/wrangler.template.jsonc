@@ -80,6 +80,10 @@
           "service": "pagewell-pdf-jobs-worker-stage"
         },
         {
+          "binding": "REVIEW_WORKER",
+          "service": "pagewell-review-worker-stage"
+        },
+        {
           "binding": "EVENTS_WORKER",
           "service": "pagewell-events-worker-stage"
         },
@@ -156,6 +160,10 @@
         {
           "binding": "JOBS_WORKER",
           "service": "pagewell-pdf-jobs-worker-prod"
+        },
+        {
+          "binding": "REVIEW_WORKER",
+          "service": "pagewell-review-worker-prod"
         },
         {
           "binding": "EVENTS_WORKER",

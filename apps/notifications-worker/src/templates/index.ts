@@ -206,7 +206,66 @@ const renderFilesShared: TemplateRenderer = (data, opts) => {
   return { subject, html, text };
 };
 
+/** Only a plain https URL becomes a link in an email. */
+const safeLink = (url: string) => (/^https:\/\/[^\s"'<>]+$/.test(url) ? url : "");
+const button = (url: string, label: string) =>
+  url ? `<p style="margin:0 0 16px;"><a href="${escapeHtml(url)}" style="display:inline-block;background:#1a1a2e;color:#ffffff;padding:10px 16px;border-radius:6px;text-decoration:none;font-size:14px;">${escapeHtml(label)}</a></p>` : "";
+
+/** Pagewell (PW5): someone @-mentioned this address in a comment. */
+const renderReviewMentioned: TemplateRenderer = (data, opts) => {
+  const brand = opts.brandName ?? "";
+  const name = str(data, "documentName");
+  const page = str(data, "page");
+  const excerpt = str(data, "excerpt");
+  const by = str(data, "by");
+  const url = safeLink(str(data, "openUrl"));
+  const lead = `${by || "Someone"} mentioned you in a comment${page ? ` on page ${page}` : ""}${name ? ` of "${name}"` : ""}.`;
+  const subject = `You were mentioned${name ? ` in "${name}"` : ""}${brand ? ` on ${brand}` : ""}`;
+  const text = [lead, excerpt ? `"${excerpt}"` : "", url ? `Open it: ${url}` : ""].filter(Boolean).join("\n\n");
+  const html = htmlShell(
+    "You were mentioned",
+    [`<p style="margin:0 0 16px;font-size:14px;">${escapeHtml(lead)}</p>`, excerpt ? `<p style="margin:0 0 16px;font-size:14px;border-left:3px solid #d0d0dc;padding-left:12px;">${escapeHtml(excerpt)}</p>` : "", button(url, "Open the comment")].join(""),
+    escapeHtml(brand ? `Sent by ${brand}` : "This is an automated email."),
+  );
+  return { subject, html, text };
+};
+
+/** Pagewell (PW5): this address was asked to review a document. */
+const renderReviewRequested: TemplateRenderer = (data, opts) => {
+  const brand = opts.brandName ?? "";
+  const name = str(data, "documentName");
+  const by = str(data, "by");
+  const message = str(data, "message");
+  const due = formatTimestamp(str(data, "dueAt"));
+  const url = safeLink(str(data, "openUrl"));
+  const lead = `${by || "Someone"} asked you to review${name ? ` "${name}"` : " a document"}${due ? ` by ${due}` : ""}.`;
+  const subject = `Review requested${name ? `: "${name}"` : ""}${brand ? ` on ${brand}` : ""}`;
+  const text = [lead, message ? `Message: ${message}` : "", url ? `Open it: ${url}` : "", "Sign in with this email address to comment and decide."].filter(Boolean).join("\n\n");
+  const html = htmlShell(
+    "Review requested",
+    [`<p style="margin:0 0 16px;font-size:14px;">${escapeHtml(lead)}</p>`, message ? `<p style="margin:0 0 16px;font-size:14px;border-left:3px solid #d0d0dc;padding-left:12px;">${escapeHtml(message)}</p>` : "", button(url, "Open the document"), '<p style="margin:0;font-size:13px;color:#6b6b80;">Sign in with this email address to comment and decide.</p>'].join(""),
+    escapeHtml(brand ? `Sent by ${brand}` : "This is an automated email."),
+  );
+  return { subject, html, text };
+};
+
+/** Pagewell (PW5): a review this address was asked for is due soon or overdue. */
+const renderReviewReminder: TemplateRenderer = (data, opts) => {
+  const brand = opts.brandName ?? "";
+  const due = formatTimestamp(str(data, "dueAt"));
+  const overdue = data.overdue === true;
+  const url = safeLink(str(data, "openUrl"));
+  const lead = overdue ? `A review you were asked for is overdue${due ? ` (it was due ${due})` : ""}.` : `A review you were asked for is due${due ? ` ${due}` : " soon"}.`;
+  const subject = `${overdue ? "Overdue" : "Reminder"}: a review is waiting for you${brand ? ` on ${brand}` : ""}`;
+  const text = [lead, url ? `Open it: ${url}` : ""].filter(Boolean).join("\n\n");
+  const html = htmlShell("A review is waiting", [`<p style="margin:0 0 16px;font-size:14px;">${escapeHtml(lead)}</p>`, button(url, "Open the document")].join(""), escapeHtml(brand ? `Sent by ${brand}` : "This is an automated email."));
+  return { subject, html, text };
+};
+
 const TEMPLATES: Record<string, TemplateRenderer> = {
+  "review.mentioned": renderReviewMentioned,
+  "review.requested": renderReviewRequested,
+  "review.reminder": renderReviewReminder,
   "auth.magic_link": renderMagicLink,
   "files.shared": renderFilesShared,
   "invitation.created": renderInvitationCreated,

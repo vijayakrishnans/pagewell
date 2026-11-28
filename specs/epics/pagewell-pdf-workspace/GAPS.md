@@ -50,6 +50,14 @@ another way, on purpose), **blocked** (waits on something outside the code), **c
 | Runner reads R2 through the wrapper | differently | The Worker can stream inputs and outputs; the container then needs no network at all | — | Inputs in the request body, outputs in the response (D17) | Closed as built |
 | Cloudflare Queue for jobs | differently | The deploy token cannot create Queues (W4) | A Queue | One Durable Object per job runs it from an alarm and retries (PW-24) | Closed as built, unless Queues become available |
 
+## Review (PW5)
+
+| Gap | Status | Why | What is missing | What was done instead | Lands |
+|---|---|---|---|---|---|
+| Sync comments from the PDF (`annotationChanged`) | differently | The editor's bridge emits no annotation event | Comments made with the editor's own tools flowing to the server | The server is the source of truth; the editor's panel writes there (D20) | PW-30 |
+| Mentions of anyone with access | partial | Telling a stranger a document's name would leak it | Mentioning people not yet in the conversation | Only earlier commenters and reviewers are emailed (D21) | Later, with member names (needs the members gap) |
+| Room route `/v1/rooms/{doc}` | differently | The edge's org-scoped routing | — | `/v1/organizations/{org}/documents/{doc}/room` with a ticket (D21) | Closed as built |
+
 ## Security (OWASP review, PW-26)
 
 | Gap | Status | Why | What is missing | What was done instead | Lands |

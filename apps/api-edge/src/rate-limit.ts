@@ -60,7 +60,8 @@ export type RouteFamily =
   | "integrations"
   | "files"
   | "links"
-  | "jobs";
+  | "jobs"
+  | "review";
 
 interface BucketLimits {
   /** Bucket capacity (max tokens). */
@@ -140,6 +141,11 @@ const LIMITS: Record<RouteFamily, FamilyConfig> = {
   // Heavy jobs (PW4): a person polls a running job's status, so reads need room; starting jobs
   // is also capped by the plan's concurrency in pdf-jobs-worker.
   jobs: {
+    identity: { limit: 120, windowSec: 60 },
+    org: { limit: 600, windowSec: 60 },
+  },
+  // Review (PW5): comments and threads; live updates arrive over the room's WebSocket, not polling.
+  review: {
     identity: { limit: 120, windowSec: 60 },
     org: { limit: 600, windowSec: 60 },
   },
