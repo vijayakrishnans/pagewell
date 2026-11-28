@@ -51,6 +51,27 @@ describe("resolvePostAuthDestination", () => {
     expect(dest).toBe("/onboarding");
   });
 
+  it("sends a guest with no org of their own to Shared with me (PW3), and onboards when nothing is shared", async () => {
+    const shared = await resolvePostAuthDestination({
+      auth: profile(null),
+      organizations: { list: async () => ({ organizations: [] }) },
+      files: { sharedWithMe: async () => ({ items: [{}] }) },
+    });
+    expect(shared).toBe("/shared");
+    const nothing = await resolvePostAuthDestination({
+      auth: profile(null),
+      organizations: { list: async () => ({ organizations: [] }) },
+      files: { sharedWithMe: async () => ({ items: [] }) },
+    });
+    expect(nothing).toBe("/onboarding");
+    const failing = await resolvePostAuthDestination({
+      auth: profile(null),
+      organizations: { list: async () => ({ organizations: [] }) },
+      files: { sharedWithMe: async () => Promise.reject(new Error("down")) },
+    });
+    expect(failing).toBe("/onboarding");
+  });
+
   it("lands on the account's billing-parent (earliest-created) org when no preference is set", async () => {
     const dest = await resolvePostAuthDestination({
       auth: profile(null),

@@ -1,0 +1,21 @@
+# Task PW-20 (milestone PW3), minted in Orunbase with this contract inline.
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: PW-20
+spec:
+  goal: The console shares folders and documents (people with inherited access shown, links with role, expiry, password and download), lists Shared with me (also for guests with no org), shows a document's Activity, and manages the org's Guests.
+  affects:
+    - default/pagewell/web-console-next
+    - default/pagewell/web-console-next-tests
+    - apps/web-console-next/**
+    - tests/web-console-next/**
+    - specs/epics/pagewell-pdf-workspace/**
+    - ai/context/**
+    - tasks/**
+  deps: [PW-19]
+  doneWhen:
+    - The drive's row menu opens Share (people and links) and Activity; a new link's URL is shown once, to copy
+    - Shared with me lists items across orgs; a guest with no org lands there after sign-in instead of onboarding
+    - Settings has Guests (list, remove); console tests pass
+  gates: []

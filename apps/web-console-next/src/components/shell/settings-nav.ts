@@ -20,6 +20,7 @@ import { SOLO_MODE } from "../../lib/solo-mode";
 const SOLO_SUPPRESSED_PATHS = [
   "/members",
   "/invitations",
+  "/guests",
   "/api-keys",
   "/webhooks",
   "/integrations",
@@ -77,6 +78,13 @@ export function buildSettingsNav(orgSlug: string, soloMode: boolean = SOLO_MODE)
           label: "Invitations",
           icon: "Mail",
           description: "Pending invites",
+        },
+        {
+          // Pagewell (PW3): people outside the org that something was shared with.
+          href: `${base}/guests`,
+          label: "Guests",
+          icon: "UserRoundPlus",
+          description: "People you shared files with",
         },
         {
           href: `${base}/notifications`,

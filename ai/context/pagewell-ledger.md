@@ -85,7 +85,8 @@ PW0 mls_QNVAF2QE · PW1 mls_3F6D2YPV · PW2 mls_3QY0GJGR · PW3 mls_48B1ECZE · 
 | PW-16 | PW3 | #19 (4a6969e) | done: sharing data + access rules |
 | PW-17 | PW3 | #20 (c9b527d) | done: files-worker sharing API |
 | PW-18 | PW3 | #21 (6034fc7) | done: team profile (Solo off) |
-| PW-19 | PW3 | — | in progress: edge, SDK, invitations |
+| PW-19 | PW3 | #22 (f593d3d) | done: edge, SDK, invitations |
+| PW-20 | PW3 | — | in progress: console sharing UI |
 
 ## Measured budgets
 

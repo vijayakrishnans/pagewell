@@ -14,8 +14,10 @@ import {
   MoreHorizontal,
   Pencil,
   RotateCcw,
+  Share2,
   Trash2,
   Upload,
+  Activity,
 } from "lucide-react";
 import type { FolderListingResponse, PublicDocument, PublicFolder, PublicVersion } from "@saas/contracts/files";
 import { Button } from "@/components/ui/button";
@@ -32,6 +34,8 @@ import { useApiQuery, qk } from "@/lib/query";
 import { wrap } from "@/lib/api";
 import { formatBytes, pdfFiles, uploadMode, usagePercent } from "@/lib/drive";
 import { useOpenInEditor } from "./open-in-editor";
+import { ShareDialog } from "./share-dialog";
+import { ActivityDialog } from "./activity-dialog";
 
 type Item = { kind: "folder"; folder: PublicFolder } | { kind: "document"; doc: PublicDocument };
 
@@ -54,6 +58,8 @@ export function DriveBrowser({ orgId, orgSlug, folderId }: Props) {
   const [renaming, setRenaming] = React.useState<Item | null>(null);
   const [trashing, setTrashing] = React.useState<Item | null>(null);
   const [versionsOf, setVersionsOf] = React.useState<PublicDocument | null>(null);
+  const [sharing, setSharing] = React.useState<Item | null>(null);
+  const [activityOf, setActivityOf] = React.useState<PublicDocument | null>(null);
   const picker = React.useRef<HTMLInputElement>(null);
 
   const refresh = React.useCallback(() => {
@@ -268,12 +274,20 @@ export function DriveBrowser({ orgId, orgSlug, folderId }: Props) {
                         <History className="h-4 w-4 mr-2" />
                         Version history
                       </DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => setActivityOf(item.doc)}>
+                        <Activity className="h-4 w-4 mr-2" />
+                        Activity
+                      </DropdownMenuItem>
                       <DropdownMenuItem onSelect={() => void download(item.doc)}>
                         <Download className="h-4 w-4 mr-2" />
                         Download
                       </DropdownMenuItem>
                     </>
                   )}
+                  <DropdownMenuItem onSelect={() => setSharing(item)}>
+                    <Share2 className="h-4 w-4 mr-2" />
+                    Share…
+                  </DropdownMenuItem>
                   <DropdownMenuItem onSelect={() => setRenaming(item)}>
                     <Pencil className="h-4 w-4 mr-2" />
                     Rename
@@ -346,6 +360,20 @@ export function DriveBrowser({ orgId, orgSlug, folderId }: Props) {
           refresh();
         }}
       />
+
+      {sharing && (
+        <ShareDialog
+          orgId={orgId}
+          resource={
+            sharing.kind === "folder"
+              ? { kind: "folder", id: sharing.folder.id, name: sharing.folder.name }
+              : { kind: "document", id: sharing.doc.id, name: sharing.doc.name }
+          }
+          onClose={() => setSharing(null)}
+        />
+      )}
+
+      {activityOf && <ActivityDialog orgId={orgId} doc={activityOf} onClose={() => setActivityOf(null)} />}
 
       {versionsOf && (
         <VersionsDialog
