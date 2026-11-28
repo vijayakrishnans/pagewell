@@ -239,6 +239,50 @@ export async function openFromDrive({ docId, say, openBytes, automation, leave }
     }
   }
 
+  /**
+   * Print (PW4): a print-ready PDF of the version open here, made on the server by a print job,
+   * opened in `tab` (opened by the click, so the browser lets it through).
+   */
+  async function print(tab) {
+    say("Preparing the print-ready PDF…");
+    const jobsBase = `${API}/v1/organizations/${session.orgId}/jobs`;
+    const auth = { authorization: `Bearer ${session.token}` };
+    const started = await fetch(jobsBase, { method: "POST", headers: { ...auth, "content-type": "application/json" }, body: JSON.stringify({ operation: "print", documentIds: [docId], version: base }) });
+    if (!started.ok) {
+      tab?.close();
+      let code = "";
+      try {
+        code = (await started.json()).error?.code ?? "";
+      } catch {
+        /* not JSON */
+      }
+      say(code === "runner_unavailable" ? "Printing from the server isn't available yet. Use your browser's print instead." : `Couldn't print (${started.status}).`, true);
+      return;
+    }
+    let job = (await started.json()).data.job;
+    for (let i = 0; i < 150 && (job.status === "queued" || job.status === "running"); i++) {
+      await new Promise((r) => setTimeout(r, 2000));
+      job = (await (await fetch(`${jobsBase}/${job.id}`, { headers: auth })).json()).data.job;
+    }
+    if (job.status !== "succeeded") {
+      tab?.close();
+      say(`Couldn't print: ${job.error?.message ?? "it took too long"}`, true);
+      return;
+    }
+    const file = await fetch(`${jobsBase}/${job.id}/files/result.pdf`, { headers: auth });
+    if (!file.ok) {
+      tab?.close();
+      say("Couldn't open the print-ready PDF.", true);
+      return;
+    }
+    const url = URL.createObjectURL(new Blob([await file.arrayBuffer()], { type: "application/pdf" }));
+    if (tab) tab.location.href = url;
+    else window.open(url, "_blank");
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    say(`${doc.name} — version ${base}`);
+    return url;
+  }
+
   try {
     await load();
   } catch (err) {
@@ -247,6 +291,7 @@ export async function openFromDrive({ docId, say, openBytes, automation, leave }
   }
   return {
     save,
+    print,
     get version() {
       return base;
     },

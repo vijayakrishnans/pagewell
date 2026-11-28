@@ -18,6 +18,7 @@ import {
   Trash2,
   Upload,
   Activity,
+  Wrench,
 } from "lucide-react";
 import type { FolderListingResponse, PublicDocument, PublicFolder, PublicVersion } from "@saas/contracts/files";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,8 @@ import { formatBytes, pdfFiles, uploadMode, usagePercent } from "@/lib/drive";
 import { useOpenInEditor } from "./open-in-editor";
 import { ShareDialog } from "./share-dialog";
 import { ActivityDialog } from "./activity-dialog";
+import { JobsTray, RunToolDialog } from "./run-tool";
+import type { PublicJob } from "@saas/contracts/jobs";
 
 type Item = { kind: "folder"; folder: PublicFolder } | { kind: "document"; doc: PublicDocument };
 
@@ -60,6 +63,9 @@ export function DriveBrowser({ orgId, orgSlug, folderId }: Props) {
   const [versionsOf, setVersionsOf] = React.useState<PublicDocument | null>(null);
   const [sharing, setSharing] = React.useState<Item | null>(null);
   const [activityOf, setActivityOf] = React.useState<PublicDocument | null>(null);
+  const [toolFor, setToolFor] = React.useState<PublicDocument | null>(null);
+  const [jobs, setJobs] = React.useState<PublicJob[]>([]);
+  const updateJob = React.useCallback((job: PublicJob) => setJobs((cur) => cur.map((j) => (j.id === job.id ? job : j))), []);
   const picker = React.useRef<HTMLInputElement>(null);
 
   const refresh = React.useCallback(() => {
@@ -191,6 +197,14 @@ export function DriveBrowser({ orgId, orgSlug, folderId }: Props) {
         </div>
       )}
 
+      <JobsTray
+        orgId={orgId}
+        jobs={jobs}
+        onUpdate={updateJob}
+        onDismiss={(id) => setJobs((cur) => cur.filter((j) => j.id !== id))}
+        onFinished={() => refresh()}
+      />
+
       {uploads.length > 0 && (
         <ul className="space-y-1 text-sm" aria-label="Uploads">
           {uploads.map((u) => (
@@ -273,6 +287,10 @@ export function DriveBrowser({ orgId, orgSlug, folderId }: Props) {
                       <DropdownMenuItem onSelect={() => setVersionsOf(item.doc)}>
                         <History className="h-4 w-4 mr-2" />
                         Version history
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => setToolFor(item.doc)}>
+                        <Wrench className="h-4 w-4 mr-2" />
+                        Run a tool…
                       </DropdownMenuItem>
                       <DropdownMenuItem onSelect={() => setActivityOf(item.doc)}>
                         <Activity className="h-4 w-4 mr-2" />
@@ -370,6 +388,16 @@ export function DriveBrowser({ orgId, orgSlug, folderId }: Props) {
               : { kind: "document", id: sharing.doc.id, name: sharing.doc.name }
           }
           onClose={() => setSharing(null)}
+        />
+      )}
+
+      {toolFor && (
+        <RunToolDialog
+          orgId={orgId}
+          doc={toolFor}
+          siblings={data?.documents ?? []}
+          onStarted={(job) => setJobs((cur) => [job, ...cur])}
+          onClose={() => setToolFor(null)}
         />
       )}
 
