@@ -96,8 +96,10 @@ locals {
   # product. R2 bucket names are unique per account, and two products may
   # share an account — without the slug the second product's create would
   # find the name taken. The Worker binds the bucket by this name, via the
-  # wiring secret.
-  bucket_name = "${var.namespacePrefix}${var.repo}-files-${var.environment}"
+  # wiring secret. No namespacePrefix (the runner sets stg-/prod-): the
+  # brokered CLOUDFLARE_R2_TOKEN is scoped to exactly pagewell-files-stage and
+  # pagewell-files-prod, so a prefixed name would be refused at apply.
+  bucket_name = "${var.repo}-files-${var.environment}"
 }
 
 resource "cloudflare_r2_bucket" "app" {
