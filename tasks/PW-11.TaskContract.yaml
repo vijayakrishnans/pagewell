@@ -1,0 +1,19 @@
+# Task PW-11 (milestone PW2), minted in Orunbase with this contract inline.
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: PW-11
+spec:
+  goal: A Terraform root creates the private R2 bucket pagewell-files-<env> for stage and prod and publishes its name as WIRING_CLOUDFLARE_R2.
+  affects:
+    - default/pagewell/cloudflare-r2
+    - infra/terraform/cloudflare-r2/**
+    - tasks/**
+  deps: [PW-10]
+  envs: [stage, prod]
+  secrets: [CLOUDFLARE_R2_TOKEN, CLOUDFLARE_ACCOUNT_ID, WIRING_CLOUDFLARE_R2]
+  doneWhen:
+    - infra/terraform/cloudflare-r2 plans clean on the PR for stage and prod
+    - After merge, apply creates pagewell-files-stage and pagewell-files-prod
+    - WIRING_CLOUDFLARE_R2 secret exists on the stage and prod rungs
+  gates: []
