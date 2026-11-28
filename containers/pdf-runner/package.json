@@ -1,0 +1,12 @@
+{
+  "name": "@pagewell/pdf-runner",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "PdfCraft operations behind POST /run, for Pagewell's heavy jobs (PW4)",
+  "scripts": {
+    "start": "node server.mjs",
+    "test:unit": "node --test test/operations.test.mjs",
+    "test:image": "node test/run-tests.mjs"
+  }
+}

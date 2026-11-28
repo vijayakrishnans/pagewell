@@ -42,10 +42,19 @@ another way, on purpose), **blocked** (waits on something outside the code), **c
 | Emails actually delivered on stage | blocked | Stage runs `DEBUG_DELIVERY`: codes and messages are returned, not mailed | Seeing a real inbox receive the invite | The enqueue is tested; the template is tested | When an email provider is set for stage/prod (PW11) |
 | Team profile | closed | The bootstrap shipped the single-user profile | — | `SOLO_MODE` off everywhere; members and invitations live (D15) | Done in PW-18 |
 
+## Heavy jobs (PW4)
+
+| Gap | Status | Why | What is missing | What was done instead | Lands |
+|---|---|---|---|---|---|
+| The runner in Cloudflare Containers | blocked (W4) | Deploying a Container needs the Containers permission; no token template grants it | Jobs running on stage and prod | The image is built and tested in CI, with no network | When the platform declares a template with Containers and the secret exists |
+| Runner reads R2 through the wrapper | differently | The Worker can stream inputs and outputs; the container then needs no network at all | — | Inputs in the request body, outputs in the response (D17) | Closed as built |
+| Cloudflare Queue for jobs | differently | The deploy token cannot create Queues (W4) | A Queue | One Durable Object per job runs it from an alarm and retries (PW-24) | Closed as built, unless Queues become available |
+
 ## Outside the code
 
 | Gap | Status | Why | What is missing | What was done instead | Lands |
 |---|---|---|---|---|---|
-| Docker on the build machine | blocked (W2) | WSL integration is off | Local runs of the `pdf-runner` image | CI builds images | User turns on Docker Desktop's WSL integration; needed for PW4 |
+| Docker on the build machine | blocked (W2) | The daemon answers, but this user is not in the `docker` group | Local runs of the `pdf-runner` image | CI builds images | User turns on Docker Desktop's WSL integration; needed for PW4 |
 | Product domain | open | None at bootstrap (D3) | A domain with a shared cookie | workers.dev origins per environment | PW11 |
+| Cloudflare Containers (and Queues) grant | blocked (W4) | No declared token template has the Containers or Queues permission | Deploying pdf-runner | Runner built and tested in CI; Durable Objects instead of a Queue | The platform adds a template; the user creates the secret |
 | `orun/compliance` check | blocked | Never reports on this repo | The provenance check on PRs | Branch, trailer, manifest and `orun task check` kept by hand on every PR | User side |

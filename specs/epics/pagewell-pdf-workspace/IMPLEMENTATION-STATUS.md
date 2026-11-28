@@ -9,7 +9,7 @@ the code departed from `design.md`.
 | PW1 — editor on the web | ✅ done 2026-11-28: vendor subtree (PW-3), upstream hooks P1/P2 (PW-5, PW-6), Rust workspace + bridge (PW-4), editor-web on stage (PW-7), three browsers, budgets, brand check (PW-8). Both budgets missed and recorded (risk PW-C) | #5, #6, #7, #8, #9, #10 |
 | PW2 — drive | ✅ done 2026-11-28: data layer (PW-9), files worker (PW-10), R2 buckets (PW-11), api-edge facade (PW-12), the drive in the console (PW-13), the editor opens and saves drive documents (PW-14), files worker live on stage and prod (PW-15). Verified on stage: 44 API checks and the real editor (see "PW2 on stage") | #11–#18 |
 | PW3 — orgs and sharing | ✅ done 2026-11-28: sharing data and the access rules with the permission matrix (PW-16), files-worker enforces sharing with links, guests, activity and audit (PW-17), team profile on (PW-18), sharing at the edge, in the SDK and by email (PW-19), sharing in the console (PW-20), the share-link viewer and the stage run (PW-21). Verified on stage: 47 sharing checks and the real editor on a link (see "PW3 on stage") | #19–#25 |
-| PW4 — heavy jobs | | |
+| PW4 — heavy jobs | in progress: the pdf-runner container, tested in CI (PW-23). Deploying it waits on the Containers grant (WAITING W4) | |
 | PW5 — review | | |
 | PW6 — e-sign | | |
 | PW7 — remote MCP | | |
@@ -211,6 +211,28 @@ multi-org by the brief, so PW3 turns the team profile on everywhere. What change
   lands on Shared with me when something is shared with them.
 - **Activity** (row menu, documents): the audit entries for the document, newest first, paged.
 - **Guests** (Settings → Guests): list, with whether each has opened anything, and remove.
+
+### D17 — The PDF runner as built (PW-23)
+- **One route, no network.** `containers/pdf-runner` is `pdfcraft-cli` (built from
+  `vendor/pdfcraft`, without its MCP server), the two OCR models named in PdfCraft's
+  `ATTRIBUTION.toml` (downloaded and checked by SHA-256 at build), Tesseract (English) and qpdf,
+  behind a small Node wrapper. `POST /run` takes the inputs **in the request body** and returns
+  the outputs **in the response**, so the container needs no network at all, not even R2 (the
+  design had it reach R2 through the wrapper); the Worker in front reads and writes R2.
+- **Nothing from a request becomes a path.** Twelve fixed operations (OCR, compress, merge, split,
+  extract, rotate, flatten, redact, sanitize, render, text, print), each a literal
+  `pdfcraft-cli run --script` over files the wrapper names itself (`in-N.pdf`, `out/…`); options
+  are validated into numbers, booleans and enums. The CLI also runs with `--root <jobdir>`.
+- **Limits.** Pages are counted in a first pass and checked before the operation runs; CPU seconds
+  and address space are capped with `prlimit`, wall time with a kill; each job gets a fresh
+  directory, removed afterwards. Hard ceilings in the image; a request may ask for less.
+- **Tested in its image in CI** (`.github/workflows/pdf-runner.yml`): run with no network, a
+  read-only root, 3 GB and 256 processes; 19 checks, every PDF output through `qpdf --check` and
+  a page count, a script naming paths outside `--root` refused with nothing written, and the
+  page, memory and wall-clock limits each stopping a job. Also green locally against the same CLI
+  and models (2026-11-28).
+- **Not deployed (WAITING W4).** A Cloudflare Container needs the Containers permission, which no
+  declared token template grants.
 
 ## PW3 on stage (2026-11-28)
 - **API, `tooling/e2e/sharing-stage.mjs`, 47 checks green** (twice: before and after the viewer
