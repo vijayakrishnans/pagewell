@@ -7,7 +7,7 @@ the code departed from `design.md`.
 |---|---|---|
 | PW0 — the spec | ✅ done 2026-11-27 (PW-1 doc set; PW-2 public, listing-ready repo) | #3, #4 |
 | PW1 — editor on the web | ✅ done 2026-11-28: vendor subtree (PW-3), upstream hooks P1/P2 (PW-5, PW-6), Rust workspace + bridge (PW-4), editor-web on stage (PW-7), three browsers, budgets, brand check (PW-8). Both budgets missed and recorded (risk PW-C) | #5, #6, #7, #8, #9, #10 |
-| PW2 — drive | in progress: data layer (PW-9), files worker verified but not deployed until the R2 bucket exists (PW-10), api-edge facade (PW-12), the drive in the console (PW-13), the editor opens and saves drive documents (PW-14) | #11, #12, #13, #14 |
+| PW2 — drive | ✅ done 2026-11-28: data layer (PW-9), files worker (PW-10), R2 buckets (PW-11), api-edge facade (PW-12), the drive in the console (PW-13), the editor opens and saves drive documents (PW-14), files worker live on stage and prod (PW-15). Verified on stage: 44 API checks and the real editor (see "PW2 on stage") | #11–#18 |
 | PW3 — orgs and sharing | | |
 | PW4 — heavy jobs | | |
 | PW5 — review | | |
@@ -123,4 +123,33 @@ whose browser has no WebGL2 now get a message saying so instead of a page stuck 
   `connect-src`. A stale save opens a dialog: save as a copy (it opens), reload, or keep
   editing. Each save sends a 36 dpi page-1 PNG and `text_extract`'s text, best-effort. The
   edit lease (`DocRoom`) is not built yet: concurrent editors are caught by `baseVersion` alone.
+
+### D12 — The R2 bucket names drop the runner's prefix (PW-11)
+The other Terraform roots name resources `${namespacePrefix}…` (`stg-`, `prod-`). The bucket is
+`pagewell-files-<env>` with no prefix, because the brokered `CLOUDFLARE_R2_TOKEN` (`r2-data`,
+created by the user, W3) is scoped to exactly those two names; the first plan named
+`stg-pagewell-files-stage`, which the token could not have created.
+
+## PW2 on stage (2026-11-28)
+- **API, `tooling/e2e/drive-stage.mjs`, 44 checks green.** Two throwaway users in their
+  provisioned orgs, a generated PDF:
+  - upload into a folder → v1, bytes round-trip;
+  - save on base 1 → v2; a second save on base 1 → `409 version_conflict` (current 2);
+  - thumbnail and text stored and served;
+  - restore v1 → v3 with v1's bytes, v2 still readable;
+  - a 10 MiB + 4 KiB multipart upload completes intact;
+  - a 101 MiB file → `402 quota_exceeded (file_size)`; a non-PDF → `415`;
+  - ten cross-org probes (org A's routes as the other user, org A's ids under org B) → `404`, and
+    the document is unchanged; no session → `401`;
+  - trash a folder: its document is marked trashed and its content is not served; restore brings
+    it back; the quota counts the bytes; CORS admits the editor origin.
+- **Editor, `tests/editor-e2e/specs/cloud-live.spec.mjs`, green in Chromium.** Nothing faked but
+  the console page that hands over the session, on the console's real origin:
+  - the real editor opens the uploaded document at v1;
+  - a page delete and Save → v2 on the drive with 4 pages, and a thumbnail;
+  - another writer saves v3, the editor's next save shows the conflict dialog, and Reload opens v3;
+  - restore v1 → v4 with v1's bytes.
+- **Sign-in on stage.** The magic-link code comes back inline there (`DEBUG_DELIVERY=true`; prod
+  sends email). New users get one organization at sign-in, and a second is refused without a
+  plan (403), so the checks use the provisioned org.
 
