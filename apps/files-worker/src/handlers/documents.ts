@@ -3,11 +3,11 @@ import type { Uuid } from "@saas/db/ids";
 import { keyBelongsTo, r2Key } from "@saas/shared/r2-keys";
 import { actorKindOf, pageCountOf, positiveInt, type Ctx } from "../context.js";
 import { cleanName, fail, invalid, notFound, ok, readJson, unavailable } from "../http.js";
-import { newUuid } from "../ids.js";
+import { newUuid, toPublic } from "../ids.js";
 import { publicDocument, publicVersion } from "../public.js";
 import { check, limits, type Limits, type QuotaVerdict } from "../quota.js";
 import { contentLength, storePdf, type StoreResult } from "../store.js";
-import { parentFrom } from "./drive.js";
+import { canWriteInto, parentFrom } from "./drive.js";
 
 const THUMB_MAX_BYTES = 512 * 1024;
 const TEXT_MAX_BYTES = 8 * 1024 * 1024;
@@ -36,6 +36,7 @@ export async function uploadDocument(ctx: Ctx, request: Request, url: URL): Prom
   const name = cleanName(url.searchParams.get("name"));
   const folder = parentFrom(url.searchParams.get("folderId"));
   if (!name || !folder.ok) return invalid(ctx.requestId, { ...(name ? {} : { name: ["1–255 characters, no slashes"] }), ...(folder.ok ? {} : { folderId: ["not a folder id"] }) });
+  if (!(await canWriteInto(ctx, folder.id))) return notFound(ctx.requestId);
   if (folder.id) {
     const f = await ctx.repo.getFolder(ctx.orgId, folder.id);
     if (!f.ok || f.value.deletedAt) return notFound(ctx.requestId);
@@ -70,7 +71,15 @@ export async function uploadDocument(ctx: Ctx, request: Request, url: URL): Prom
     await ctx.bucket.delete(key);
     return r.error.kind === "not_found" ? notFound(ctx.requestId) : unavailable(ctx.requestId);
   }
+  await documentCreated(ctx, r.value.document.id as Uuid, name, folder.id);
   return ok({ document: publicDocument(r.value.document), version: publicVersion(r.value.version) }, ctx.requestId, 201);
+}
+
+export function documentCreated(ctx: Ctx, docId: Uuid, name: string, folderId: Uuid | null): Promise<void> {
+  return ctx.audit.record("document.created", { kind: "document", id: docId, name }, `Uploaded "${name}"`, {
+    documentId: toPublic("doc", docId),
+    folderId: folderId ? toPublic("fld", folderId) : null,
+  });
 }
 
 export async function listRecent(ctx: Ctx, url: URL): Promise<Response> {
@@ -93,23 +102,35 @@ export async function updateDocument(ctx: Ctx, request: Request, docId: Uuid): P
   const folder = "folderId" in body ? parentFrom(body.folderId) : undefined;
   if (name === null) return invalid(ctx.requestId, { name: ["1–255 characters, no slashes"] });
   if (folder && !folder.ok) return invalid(ctx.requestId, { folderId: ["not a folder id"] });
+  if (folder?.ok && !(await canWriteInto(ctx, folder.id))) return notFound(ctx.requestId);
   let r = await ctx.repo.getDocument(ctx.orgId, docId);
   if (r.ok && r.value.deletedAt) return notFound(ctx.requestId);
-  if (r.ok && name !== undefined) r = await ctx.repo.renameDocument(ctx.orgId, docId, name, ctx.now);
-  if (r.ok && folder?.ok) r = await ctx.repo.moveDocument(ctx.orgId, docId, folder.id, ctx.now);
+  const oldName = r.ok ? r.value.name : "";
+  if (r.ok && name !== undefined) {
+    r = await ctx.repo.renameDocument(ctx.orgId, docId, name, ctx.now);
+    if (r.ok) await ctx.audit.record("document.renamed", { kind: "document", id: docId, name }, `Renamed "${oldName}" to "${name}"`, { documentId: toPublic("doc", docId) });
+  }
+  if (r.ok && folder?.ok) {
+    r = await ctx.repo.moveDocument(ctx.orgId, docId, folder.id, ctx.now);
+    if (r.ok) await ctx.audit.record("document.moved", { kind: "document", id: docId, name: r.value.name }, `Moved "${r.value.name}"`, { documentId: toPublic("doc", docId), folderId: folder.id ? toPublic("fld", folder.id) : null });
+  }
   if (!r.ok) return r.error.kind === "not_found" ? notFound(ctx.requestId) : unavailable(ctx.requestId);
   return ok({ document: publicDocument(r.value) }, ctx.requestId);
 }
 
 export async function trashDocument(ctx: Ctx, docId: Uuid): Promise<Response> {
+  const before = await ctx.repo.getDocument(ctx.orgId, docId);
   const r = await ctx.repo.trashDocument(ctx.orgId, docId, ctx.now);
   if (!r.ok) return r.error.kind === "not_found" ? notFound(ctx.requestId) : unavailable(ctx.requestId);
+  const name = before.ok ? before.value.name : null;
+  await ctx.audit.record("document.deleted", { kind: "document", id: docId, name }, `Moved "${name ?? ""}" to the trash`, { documentId: toPublic("doc", docId) });
   return ok({ deletedAt: r.value.deletedAt.toISOString() }, ctx.requestId);
 }
 
 export async function restoreDocument(ctx: Ctx, docId: Uuid): Promise<Response> {
   const r = await ctx.repo.restoreDocument(ctx.orgId, docId, ctx.now);
   if (!r.ok) return r.error.kind === "not_found" ? notFound(ctx.requestId) : unavailable(ctx.requestId);
+  await ctx.audit.record("document.restored", { kind: "document", id: docId, name: r.value.name }, `Restored "${r.value.name}" from the trash`, { documentId: toPublic("doc", docId) });
   return ok({ document: publicDocument(r.value) }, ctx.requestId);
 }
 
@@ -180,7 +201,17 @@ export async function commitVersion(
     restoredFrom,
     now: ctx.now,
   });
-  if (r.ok) return ok({ document: publicDocument(r.value.document), version: publicVersion(r.value.version) }, ctx.requestId, 201);
+  if (r.ok) {
+    const n = r.value.version.version;
+    const name = r.value.document.name;
+    await ctx.audit.record(
+      restoredFrom ? "version.restored" : "version.created",
+      { kind: "document", id: docId, name },
+      restoredFrom ? `Restored version ${restoredFrom} of "${name}" as version ${n}` : `Saved version ${n} of "${name}"`,
+      { documentId: toPublic("doc", docId), version: n, restoredFrom, size: object.size },
+    );
+    return ok({ document: publicDocument(r.value.document), version: publicVersion(r.value.version) }, ctx.requestId, 201);
+  }
   if (freshObject) await ctx.bucket.delete(object.r2Key);
   if (r.error.kind === "version_conflict") return versionConflict(ctx, r.error.currentVersion);
   return r.error.kind === "not_found" ? notFound(ctx.requestId) : unavailable(ctx.requestId);

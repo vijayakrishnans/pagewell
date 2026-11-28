@@ -8,8 +8,8 @@ import { fromPublic, newUuid, toPublic } from "../ids.js";
 import { publicDocument, publicVersion } from "../public.js";
 import { check, limits } from "../quota.js";
 import { digestObject, looksLikePdf } from "../store.js";
-import { parentFrom } from "./drive.js";
-import { commitVersion, quotaExceeded, versionConflict } from "./documents.js";
+import { canWriteInto, parentFrom } from "./drive.js";
+import { commitVersion, documentCreated, quotaExceeded, versionConflict } from "./documents.js";
 
 // Multipart uploads, for files too big for one request. The target document id
 // is decided when the upload starts (the object key carries it): a new
@@ -35,6 +35,8 @@ export async function createUpload(ctx: Ctx, request: Request): Promise<Response
   if (body?.docId !== undefined && body?.docId !== null && !existing) fields.docId = ["not a document id"];
   if (existing && !base) fields.baseVersion = ["the version this save starts from"];
   if (Object.keys(fields).length || !name || !folder.ok || !size) return invalid(ctx.requestId, fields);
+  const allowed = existing ? await ctx.access.can("files.write", { kind: "document", id: existing }) : await canWriteInto(ctx, folder.id);
+  if (!allowed) return notFound(ctx.requestId);
 
   let versionsOfDoc: number | undefined;
   if (existing) {
@@ -77,10 +79,14 @@ export async function createUpload(ctx: Ctx, request: Request): Promise<Response
   return ok({ upload: { id: toPublic("upl", uploadId), partSize: UPLOAD_PART_BYTES, expiresAt: expiresAt.toISOString() } }, ctx.requestId, 201);
 }
 
+/** An open upload, to the person who started it only, while they may still write where it goes. */
 async function openUpload(ctx: Ctx, uploadId: Uuid): Promise<Upload | null> {
   const r = await ctx.repo.getUpload(ctx.orgId, uploadId);
   if (!r.ok || r.value.completedAt || r.value.expiresAt <= ctx.now) return null;
-  return r.value;
+  if (r.value.createdBy !== ctx.actor.subjectId) return null;
+  const u = r.value;
+  const allowed = u.baseVersion !== null && u.docId ? await ctx.access.can("files.write", { kind: "document", id: u.docId as Uuid }) : await canWriteInto(ctx, u.folderId as Uuid | null);
+  return allowed ? u : null;
 }
 
 /** PUT /uploads/{upl}/parts/{n} with the part's bytes. Part 1 must start the PDF. */
@@ -156,6 +162,7 @@ export async function completeUpload(ctx: Ctx, request: Request, uploadId: Uuid)
     return r.error.kind === "not_found" ? notFound(ctx.requestId) : unavailable(ctx.requestId);
   }
   await ctx.repo.completeUpload(ctx.orgId, uploadId, ctx.now);
+  await documentCreated(ctx, docId, u.name, u.folderId as Uuid | null);
   return ok({ document: publicDocument(r.value.document), version: publicVersion(r.value.version) }, ctx.requestId, 201);
 }
 

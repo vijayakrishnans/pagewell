@@ -7,8 +7,8 @@ import { createHash } from "node:crypto";
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { authorize } from "@saas/policy-engine";
-import type { AuthorizationRequest, MembershipFact } from "@saas/contracts/policy";
+import { authorize, listEffectivePermissions } from "@saas/policy-engine";
+import type { AuthorizationRequest, EffectivePermissionsRequest, MembershipFact } from "@saas/contracts/policy";
 import { D1ApiAdapter } from "@saas/db/runner";
 import { route } from "@files-worker/router";
 import { sweep } from "@files-worker/cron";
@@ -167,13 +167,24 @@ export class Directory {
   }
 }
 
-const fetcher = (handler: (body: unknown) => unknown): Fetcher =>
+const fetcher = (handler: (body: unknown, path: string) => unknown): Fetcher =>
   ({
-    async fetch(_url: string, init?: RequestInit) {
+    async fetch(url: string, init?: RequestInit) {
       const body: unknown = init?.body ? JSON.parse(String(init.body)) : null;
-      return Response.json({ data: handler(body) });
+      return Response.json({ data: handler(body, new URL(url).pathname) });
     },
   }) as unknown as Fetcher;
+
+/** policy-worker's two decision routes over the real engine; `calls` counts them. */
+export const policyCalls = { authorize: 0, effective: 0 };
+function policyWorker(body: unknown, path: string) {
+  if (path.endsWith("/effective-permissions")) {
+    policyCalls.effective++;
+    return listEffectivePermissions(body as EffectivePermissionsRequest);
+  }
+  policyCalls.authorize++;
+  return authorize(body as AuthorizationRequest);
+}
 
 /** Billing's entitlement seam: a key set here answers with that limit; anything else is not configured. */
 export function billing(limits: Record<string, number | null> = {}): Fetcher {
@@ -190,7 +201,7 @@ export interface World {
   directory: Directory;
   env: Env;
   now: Date;
-  request(method: string, path: string, init?: { user?: string; body?: BodyInit | null; headers?: Record<string, string>; json?: unknown }): Promise<Response>;
+  request(method: string, path: string, init?: { user?: string; email?: string; body?: BodyInit | null; headers?: Record<string, string>; json?: unknown }): Promise<Response>;
   sweep(at: Date): ReturnType<typeof sweep>;
 }
 
@@ -206,7 +217,7 @@ export function world(limits: Record<string, number | null> = {}): World {
       const { subject, orgId } = body as { subject: { id: string }; orgId: string };
       return { memberships: directory.facts(subject.id, orgId) };
     }),
-    POLICY_WORKER: fetcher((body) => authorize(body as AuthorizationRequest)),
+    POLICY_WORKER: fetcher(policyWorker),
     BILLING_WORKER: billing(limits),
   };
   const w: World = {
@@ -220,6 +231,7 @@ export function world(limits: Record<string, number | null> = {}): World {
       if (init.user) {
         headers["x-actor-subject-id"] = init.user;
         headers["x-actor-subject-type"] = "user";
+        if (init.email) headers["x-actor-email"] = init.email;
       }
       let body = init.body ?? null;
       if (init.json !== undefined) {
@@ -263,7 +275,7 @@ export const sha256 = (bytes: Uint8Array) => createHash("sha256").update(bytes).
 
 /** Every row of the drive's tables and every R2 key, for "nothing changed" assertions. */
 export function snapshot(w: World): string {
-  const tables = ["files_folders", "files_documents", "files_versions", "files_uploads"].map((t) => w.db.prepare(`SELECT * FROM ${t} ORDER BY 1, 2`).all());
+  const tables = ["files_folders", "files_documents", "files_versions", "files_uploads", "files_grants", "files_links", "files_guests"].map((t) => w.db.prepare(`SELECT * FROM ${t} ORDER BY 1, 2`).all());
   const objects = [...w.bucket.objects.entries()].map(([k, v]) => [k, sha256(v.bytes)]).sort();
   return JSON.stringify({ tables, objects, uploads: [...w.bucket.uploads.keys()].sort() });
 }

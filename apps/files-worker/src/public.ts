@@ -1,4 +1,5 @@
-import type { Document, Folder, TrashEntry, Version } from "@saas/db/files";
+import type { Document, Folder, Grant, Guest, ShareLink, TrashEntry, Version } from "@saas/db/files";
+import type { PublicGrant, PublicGuest, PublicLink } from "@saas/contracts/sharing";
 import type { PublicDocument, PublicFolder, PublicTrashEntry, PublicVersion } from "@saas/contracts/files";
 import { TRASH_RETENTION_DAYS } from "@saas/contracts/files";
 import { toPublic } from "./ids.js";
@@ -56,5 +57,41 @@ export function publicTrashEntry(e: TrashEntry): PublicTrashEntry {
     name: e.name,
     deletedAt: e.deletedAt.toISOString(),
     purgeAt: new Date(e.deletedAt.getTime() + TRASH_RETENTION_DAYS * 86_400_000).toISOString(),
+  };
+}
+
+const resourceOf = (kind: "folder" | "document", id: string) => ({ kind, id: toPublic(kind === "folder" ? "fld" : "doc", id) });
+
+/** A grant on the wire. `guest` is the guest record for guest grants; `from` names the folder it is inherited from. */
+export function publicGrant(g: Grant, guest: Guest | null, from: { folderId: string; name: string } | null): PublicGrant {
+  return {
+    id: toPublic("grt", g.id),
+    resource: resourceOf(g.resourceKind, g.resourceId),
+    principal:
+      g.principalKind === "member"
+        ? { kind: "member", userId: g.principalId }
+        : { kind: "guest", guestId: toPublic("gst", g.principalId), email: guest?.email ?? "", name: guest?.name ?? null, verified: Boolean(guest?.verifiedAt) },
+    role: g.role,
+    inheritedFrom: from ? { folderId: toPublic("fld", from.folderId), name: from.name } : null,
+    createdBy: g.createdBy,
+    createdAt: g.createdAt.toISOString(),
+  };
+}
+
+export function publicGuest(g: Guest): PublicGuest {
+  return { id: toPublic("gst", g.id), email: g.email, name: g.name, invitedAt: g.invitedAt.toISOString(), verifiedAt: isoOrNull(g.verifiedAt) };
+}
+
+/** A link on the wire: never its token or password hash. */
+export function publicLink(l: ShareLink): PublicLink {
+  return {
+    id: toPublic("lnk", l.id),
+    resource: resourceOf(l.resourceKind, l.resourceId),
+    role: l.role,
+    hasPassword: l.passwordHash !== null,
+    expiresAt: isoOrNull(l.expiresAt),
+    allowDownload: l.allowDownload,
+    createdBy: l.createdBy,
+    createdAt: l.createdAt.toISOString(),
   };
 }

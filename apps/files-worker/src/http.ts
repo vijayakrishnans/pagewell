@@ -1,5 +1,6 @@
 import type { ErrorCode } from "@saas/contracts/errors";
 import type { FilesErrorCode } from "@saas/contracts/files";
+import type { SHARING_ERROR_CODES } from "@saas/contracts/sharing";
 
 const JSON_HEADERS = { "content-type": "application/json", "cache-control": "no-store" };
 
@@ -8,7 +9,7 @@ export function ok<T>(data: T, requestId: string, status = 200, cursor: string |
 }
 
 export function fail(
-  code: ErrorCode | FilesErrorCode,
+  code: ErrorCode | FilesErrorCode | (typeof SHARING_ERROR_CODES)[keyof typeof SHARING_ERROR_CODES],
   message: string,
   status: number,
   requestId: string,
